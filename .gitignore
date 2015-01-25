@@ -4,6 +4,5 @@ eclipse_workspace/*
 incremental_db/*
 output_files/*
 #will remove it from this file later
-software/*
 *.bak
 *.rpt
