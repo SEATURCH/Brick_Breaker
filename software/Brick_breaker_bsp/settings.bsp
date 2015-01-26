@@ -2,8 +2,8 @@
 <sch:Settings xmlns:sch="http://www.altera.com/embeddedsw/bsp/schema">
         <BspType>hal</BspType>
         <BspVersion>default</BspVersion>
-        <BspGeneratedTimeStamp>Jan 24, 2015 4:23:39 PM</BspGeneratedTimeStamp>
-        <BspGeneratedUnixTimeStamp>1422145419423</BspGeneratedUnixTimeStamp>
+        <BspGeneratedTimeStamp>Jan 25, 2015 4:48:38 PM</BspGeneratedTimeStamp>
+        <BspGeneratedUnixTimeStamp>1422233318899</BspGeneratedUnixTimeStamp>
         <BspGeneratedLocation>C:\Users\Himanshu\Desktop\eece_381\Brick_Breaker\software\Brick_breaker_bsp</BspGeneratedLocation>
         <BspSettingsFile>settings.bsp</BspSettingsFile>
         <SopcDesignFile>C:\Users\Himanshu\Desktop\eece_381\Brick_Breaker\nios_system.sopcinfo</SopcDesignFile>

@@ -15,6 +15,6 @@
 #include "sys/alt_timestamp.h"
 
 void exer2();
-
+void sleep(unsigned int seconds);
 
 #endif /* TIMESTAMP_TIMER_H_ */

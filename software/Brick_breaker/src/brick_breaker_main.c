@@ -127,6 +127,7 @@ int main() {
 		//alt_up_pixel_buffer_dma_draw_box(pixel_buffer, x1, y1, x2, y2,
 		//		color, 0);
 
+		DrawBallObjectMovement(); // still hardcoded
 	}
 
 #if PERFORM_EXERCISES == 1

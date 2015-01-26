@@ -8,6 +8,7 @@
  */
 
 #include "../include/vga_graphics.h"
+#include "../include/timestamp_timer.h"
 
 // x - 9 bits
 // y - 8 bits
@@ -26,6 +27,50 @@ void DrawBoxFPGA(int x1, int y1, int x2, int y2, int color) {
 	// Start drawing
 	while (IORD_32DIRECT(DRAWER_BASE,20) == 0)
 		; // wait until done
+}
+void DrawFPGABallObject(int renderObjectStartX, int renderObjectStartY,
+		int color) {
+	// Set the coordinates of the render object
+	IOWR_32DIRECT(DRAWER_BASE, 0, renderObjectStartX);
+	IOWR_32DIRECT(DRAWER_BASE, 4, renderObjectStartY);
+
+	IOWR_32DIRECT(DRAWER_BASE, 8, renderObjectStartX + RENDER_OBJECT_WIDTH);
+	IOWR_32DIRECT(DRAWER_BASE, 12, renderObjectStartY + RENDER_OBJECT_HEIGHT);
+
+	// Set colour
+	IOWR_32DIRECT(DRAWER_BASE, 16, color);
+
+	// Start drawing
+	IOWR_32DIRECT(DRAWER_BASE, 20, 1);
+
+	// wait until done
+	while (IORD_32DIRECT(DRAWER_BASE,20) == 0)
+		;
+}
+
+void DrawBallObjectMovement() {
+	int cursorY = 0;
+	int cursorX = 0;
+	int Xspeed = 8;
+	int Yspeed = 8;
+
+	while (1){
+		DrawFPGABallObject((cursorX),(cursorY),0x001F);
+		cursorX += Xspeed;
+		cursorY += Yspeed;
+		sleep(1);
+		if((cursorX >= 312 && cursorY >= 232) ||
+			(cursorX <= 0 && cursorY <= 0)){
+		Yspeed *= -1;
+		Xspeed *= -1;
+		}
+		if(cursorY >= 232 || cursorY <= 0){
+			Yspeed *= -1;
+		}
+		if(cursorX >= 312 || cursorX <= 0){
+			Xspeed *= -1;
+		}
+	}
 }
 
 void DrawFPGARenderObject(int renderObjectStartX, int renderObjectStartY,
@@ -122,7 +167,7 @@ void InitializeBlockObjectStructure(BlockObjectStructure * blockObjectStructure,
 // Adds a block to the screen at (renderObjectXStart, renderObjectYStart), with default attributes
 // This function does NOT do error checking for collision with other blocks!
 // Implement error-checking outside of this function if error-checking is needed.
-int AddBlock(BlockObjectStructure *blockObjectStructure, int renderObjectXStart,
+void AddBlock(BlockObjectStructure *blockObjectStructure, int renderObjectXStart,
 		int renderObjectYStart) {
 	BlockObject *blockObject =
 			&blockObjectStructure->blockObjects[blockObjectStructure->numBlocksSet];

@@ -35,3 +35,19 @@ void exer2(){
 
 }
 
+void sleep(unsigned int seconds){
+	alt_u32 start_time;
+	alt_u32 end_time;
+	float sec;
+		if (alt_timestamp_start() < 0){
+			printf("No timestamp device is available.\n");
+		}else{
+			start_time = alt_timestamp();
+			end_time = alt_timestamp();
+			sec = (float)(end_time-start_time)/(float)alt_timestamp_freq();
+			while (sec < (float)(seconds)){
+				end_time = alt_timestamp();
+				sec = (float)(end_time-start_time)/(float)alt_timestamp_freq();
+			}
+		}
+}

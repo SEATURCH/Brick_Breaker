@@ -30,7 +30,7 @@
 #define RENDER_OBJECT_HEIGHT			8
 
 #define NUM_RENDER_OBJECTS_WIDTH		((SCREEN_WIDTH) / (RENDER_OBJECT_WIDTH))
-#define NUM_RENDER_OBJECTS_HEIGHT		((SCREEN_HEIGHT_BLOCKAREA) / (RENDER_OBJECT_WIDTH))
+#define NUM_RENDER_OBJECTS_HEIGHT		((SCREEN_HEIGHT_BLOCKAREA) / (RENDER_OBJECT_HEIGHT))
 #define NUM_RENDER_OBJECTS_TOTAL		((NUM_RENDER_OBJECTS_WIDTH) * (NUM_RENDER_OBJECTS_HEIGHT))
 
 // Defined in terms of Render Object dimensions
@@ -39,7 +39,7 @@
 #define DEFAULT_BLOCK_COLOR				0xFFFF
 
 // Theoretical max of # of blocks
-#define DEFAULT_MAX_BLOCKS				((NUM_RENDER_OBJECTS_TOTAL) / ((DEFAULT_BLOCK_WIDTH) * (DEFAULT_BLOCK_WIDTH)))
+#define DEFAULT_MAX_BLOCKS				((NUM_RENDER_OBJECTS_TOTAL) / ((DEFAULT_BLOCK_WIDTH) * (DEFAULT_BLOCK_HEIGHT)))
 
 // Structures
 
@@ -100,13 +100,15 @@ void InitializeBlockObjectStructure(BlockObjectStructure * blockObjectStructure,
 		RenderObjectStructure *renderObjectStructure);
 
 // Methods
-int AddBlock(BlockObjectStructure * blockObjectStructure,
+void AddBlock(BlockObjectStructure * blockObjectStructure,
 		int renderObjectXStart, int renderObjectYStart);
 
 void MapBlockObjectStructureToRender(
 		BlockObjectStructure * blockObjectStructure,
 		RenderObjectStructure *renderObjectStructure);
-
+void DrawBallObjectMovement();
+void DrawFPGABallObject(int renderObjectStartX, int renderObjectStartY,
+		int color);
 // Test funcs
 void SetRandomColors(RenderObjectStructure *renderObjectStructure);
 void SetBlack(RenderObjectStructure *renderObjectStructure);
