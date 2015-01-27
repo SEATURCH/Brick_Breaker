@@ -29,13 +29,22 @@
 #define RENDER_OBJECT_WIDTH				8
 #define RENDER_OBJECT_HEIGHT			8
 
+#define RENDER_TO_BALL_RATIO			2	// must be a whole number
+
+#define BALL_OBJECT_WIDTH				RENDER_OBJECT_WIDTH/RENDER_TO_BALL_RATIO
+#define BALL_OBJECT_HEIGHT				BALL_OBJECT_WIDTH 		// enforce it to be square
+#define BALL_SPEED						BALL_OBJECT_WIDTH * 1 	// must be a whole number to move in straight line
+
+#define LIMIT_X							SCREEN_WIDTH - BALL_OBJECT_WIDTH
+#define LIMIT_Y							SCREEN_HEIGHT - BALL_OBJECT_HEIGHT
+
 #define NUM_RENDER_OBJECTS_WIDTH		((SCREEN_WIDTH) / (RENDER_OBJECT_WIDTH))
 #define NUM_RENDER_OBJECTS_HEIGHT		((SCREEN_HEIGHT_BLOCKAREA) / (RENDER_OBJECT_HEIGHT))
 #define NUM_RENDER_OBJECTS_TOTAL		((NUM_RENDER_OBJECTS_WIDTH) * (NUM_RENDER_OBJECTS_HEIGHT))
 
 // Defined in terms of Render Object dimensions
-#define DEFAULT_BLOCK_WIDTH				3
-#define DEFAULT_BLOCK_HEIGHT			2
+#define DEFAULT_BLOCK_WIDTH				2
+#define DEFAULT_BLOCK_HEIGHT			1
 #define DEFAULT_BLOCK_COLOR				0xFFFF
 
 // Theoretical max of # of blocks
@@ -44,7 +53,7 @@
 // Structures
 
 typedef struct RenderObjectStructure {
-	int color[NUM_RENDER_OBJECTS_TOTAL];
+	int color[NUM_RENDER_OBJECTS_TOTAL]; // need new struct with array and int that tells if there's a block to find out invisible block
 	int numRenderObjectsWidth;
 	int numRenderObjectsHeight;
 } RenderObjectStructure;
@@ -106,7 +115,7 @@ void AddBlock(BlockObjectStructure * blockObjectStructure,
 void MapBlockObjectStructureToRender(
 		BlockObjectStructure * blockObjectStructure,
 		RenderObjectStructure *renderObjectStructure);
-void DrawBallObjectMovement();
+void DrawBallObjectMovement(RenderObjectStructure *renderObjectStructure);
 void DrawFPGABallObject(int renderObjectStartX, int renderObjectStartY,
 		int color);
 // Test funcs

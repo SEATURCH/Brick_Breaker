@@ -34,8 +34,8 @@ void DrawFPGABallObject(int renderObjectStartX, int renderObjectStartY,
 	IOWR_32DIRECT(DRAWER_BASE, 0, renderObjectStartX);
 	IOWR_32DIRECT(DRAWER_BASE, 4, renderObjectStartY);
 
-	IOWR_32DIRECT(DRAWER_BASE, 8, renderObjectStartX + RENDER_OBJECT_WIDTH);
-	IOWR_32DIRECT(DRAWER_BASE, 12, renderObjectStartY + RENDER_OBJECT_HEIGHT);
+	IOWR_32DIRECT(DRAWER_BASE, 8, renderObjectStartX + BALL_OBJECT_WIDTH);
+	IOWR_32DIRECT(DRAWER_BASE, 12, renderObjectStartY + BALL_OBJECT_HEIGHT);
 
 	// Set colour
 	IOWR_32DIRECT(DRAWER_BASE, 16, color);
@@ -48,27 +48,72 @@ void DrawFPGABallObject(int renderObjectStartX, int renderObjectStartY,
 		;
 }
 
-void DrawBallObjectMovement() {
+void DrawBallObjectMovement(RenderObjectStructure *renderObjectStructure) {
 	int cursorY = 0;
 	int cursorX = 0;
-	int Xspeed = 8;
-	int Yspeed = 8;
+	int Xspeed = BALL_SPEED;
+	int Yspeed = BALL_SPEED;
+	int oldCursorX = cursorX;
+	int oldCursorY = cursorY;
+	int index, change_dir = 0;
+
+	DrawFPGABallObject(cursorX,cursorY,0x001F);
+	cursorX += Xspeed;
+	cursorY += Yspeed;
+	sleep(1);
+	if(cursorY >= LIMIT_Y || cursorY <= 0){
+				Yspeed *= -1;
+			}
+			if(cursorX >= LIMIT_X || cursorX <= 0){
+				Xspeed *= -1;
+			}
 
 	while (1){
-		DrawFPGABallObject((cursorX),(cursorY),0x001F);
+		DrawFPGABallObject(cursorX,cursorY,0x001F);
+		DrawFPGABallObject(oldCursorX,oldCursorY,SCREEN_BACKGROUND_COLOR);
+		oldCursorX = cursorX;
+		oldCursorY = cursorY;
 		cursorX += Xspeed;
 		cursorY += Yspeed;
 		sleep(1);
-		if((cursorX >= 312 && cursorY >= 232) ||
-			(cursorX <= 0 && cursorY <= 0)){
+		/*
+		if((cursorX >= LIMIT_X && cursorY >= LIMIT_Y) ||
+			(cursorX <= 0 && cursorY <= 0) ||
+			(cursorX >= LIMIT_X && cursorY <= 0) ||
+			(cursorY >= LIMIT_Y && cursorY <= 0)){
 		Yspeed *= -1;
 		Xspeed *= -1;
-		}
-		if(cursorY >= 232 || cursorY <= 0){
+		}*/
+		if(cursorY >= LIMIT_Y || cursorY <= 0){
 			Yspeed *= -1;
 		}
-		if(cursorX >= 312 || cursorX <= 0){
+		if(cursorX >= LIMIT_X || cursorX <= 0){
 			Xspeed *= -1;
+		}
+		if (cursorY <= 156 && cursorY >= 0 && cursorX <= 316 && cursorX >= 0){
+			index = (cursorY/8)*(40) + (cursorX/8);
+			if (renderObjectStructure->color[index] != SCREEN_BACKGROUND_COLOR){
+				renderObjectStructure->color[index] = SCREEN_BACKGROUND_COLOR;
+				change_dir = 1;
+			}
+			index = index - 40;
+			if(index >= 0){
+			if (renderObjectStructure->color[index] != SCREEN_BACKGROUND_COLOR){
+				renderObjectStructure->color[index] = SCREEN_BACKGROUND_COLOR;
+				Xspeed *= -1;
+			} else if(change_dir){
+				Yspeed *= -1;
+			}
+			}
+			index = index + 39;
+			if(index <= 800){
+			if (renderObjectStructure->color[index] != SCREEN_BACKGROUND_COLOR){
+				renderObjectStructure->color[index] = SCREEN_BACKGROUND_COLOR;
+				Yspeed *= -1;
+			} else if(change_dir){
+				Xspeed *= -1;
+			}
+			}
 		}
 	}
 }
@@ -124,7 +169,7 @@ int InitializeVGA(alt_up_pixel_buffer_dma_dev *pixel_buffer) {
 	// they only provide a function to change the background buffer address, so
 	// we must set that, and then swap it to the foreground.
 	alt_up_pixel_buffer_dma_change_back_buffer_address(pixel_buffer,
-			PIXEL_BUFFER_BASE);
+			pixel_buff_base);
 	// Swap background and foreground buffers
 	alt_up_pixel_buffer_dma_swap_buffers(pixel_buffer);
 	// Wait for the swap to complete

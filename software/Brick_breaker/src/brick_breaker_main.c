@@ -90,7 +90,7 @@ int main() {
 	//  i.e. add power-up block, or add a smaller sized block, etc
 
 	// SAMPLE SUBROUTINE: Checkerboard
-	{
+/*	{
 		int i, j;
 		for (j = 0; (j + DEFAULT_BLOCK_HEIGHT - 1) < NUM_RENDER_OBJECTS_HEIGHT;
 				j += 3) {
@@ -100,7 +100,19 @@ int main() {
 				AddBlock(&blockObjectStructure, i, j);
 			}
 		}
-	}
+	}*/
+
+	{
+			int i, j;
+			for (j = 5; (j + DEFAULT_BLOCK_HEIGHT - 1) < 10;
+					j ++) {
+				for (i = 10;
+						(i + DEFAULT_BLOCK_WIDTH - 1) < 20;
+						i ++) {
+					AddBlock(&blockObjectStructure, i, j);
+				}
+			}
+		}
 
 	// Map the blocks that were just added
 	MapBlockObjectStructureToRender(&blockObjectStructure,
@@ -127,7 +139,7 @@ int main() {
 		//alt_up_pixel_buffer_dma_draw_box(pixel_buffer, x1, y1, x2, y2,
 		//		color, 0);
 
-		DrawBallObjectMovement(); // still hardcoded
+		DrawBallObjectMovement(&renderObjectStructure); // still hardcoded
 	}
 
 #if PERFORM_EXERCISES == 1
