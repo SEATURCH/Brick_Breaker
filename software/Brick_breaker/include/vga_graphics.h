@@ -5,6 +5,8 @@
  *      Author: Himanshu
  *  Modified on: Jan 25, 2015
  *  	Author: Alan L.
+ *  Modified on: Jan 28, 2015
+ *	Author: Francis
  */
 
 #ifndef VGA_GRAPHICS_H_
@@ -49,6 +51,13 @@
 
 // Theoretical max of # of blocks
 #define DEFAULT_MAX_BLOCKS				((NUM_RENDER_OBJECTS_TOTAL) / ((DEFAULT_BLOCK_WIDTH) * (DEFAULT_BLOCK_HEIGHT)))
+
+// Paddle default values
+#define DEFAULT_PADDLE_WIDTH			16
+#define DEFAULT_PADDLE_HEIGHT			4
+#define INITIAL_PADDLE_Y_POS			220
+#define INITIAL_PADDLE_X_POS			((SCREEN_WIDTH >> 1) - DEFAULT_PADDLE_WIDTH)
+#define DEFAULT_PADDLE_COLOR			0x0F0F
 
 // Structures
 
@@ -95,11 +104,21 @@ typedef struct BlockObjectStructure {
 	int numBlocksSet;
 } BlockObjectStructure;
 
+// Structure for the paddle
+typedef struct Paddle {
+	int x_pos;
+	int y_pos;
+	int width;
+	int height;
+	int color;
+} Paddle;
+
 // Drawing
 void DrawBoxFPGA(int x1, int y1, int x2, int y2, int color);
 void DrawFPGARenderObject(int renderObjectStartX, int renderObjectStartY,
 		int color);
 void DrawRenderObjectStructure(RenderObjectStructure *renderObjectStructure);
+void DrawFPGAPaddleObject (Paddle* paddle, int color);
 
 // Initialization
 int InitializeVGA(alt_up_pixel_buffer_dma_dev *pixel_buffer);
@@ -107,6 +126,7 @@ void InitializeRenderObjectStructure(
 		RenderObjectStructure *renderObjectStructure);
 void InitializeBlockObjectStructure(BlockObjectStructure * blockObjectStructure,
 		RenderObjectStructure *renderObjectStructure);
+void InitializePaddle(Paddle* paddle);
 
 // Methods
 void AddBlock(BlockObjectStructure * blockObjectStructure,
@@ -118,6 +138,7 @@ void MapBlockObjectStructureToRender(
 void DrawBallObjectMovement(RenderObjectStructure *renderObjectStructure);
 void DrawFPGABallObject(int renderObjectStartX, int renderObjectStartY,
 		int color);
+void MovePaddle(Paddle* paddle,int paddleNextPosX);
 // Test funcs
 void SetRandomColors(RenderObjectStructure *renderObjectStructure);
 void SetBlack(RenderObjectStructure *renderObjectStructure);
