@@ -5,6 +5,8 @@
  *      Author: Himanshu
  *  Modified on: Jan 25, 2015
  *  	Author: Alan
+ *  Modified on: Jan 28, 2015
+ *	Author: Francis
  */
 
 #include "../include/common.h"
@@ -23,7 +25,8 @@ int InitializeComponents(alt_up_sd_card_dev* sd_dev,
 		alt_up_character_lcd_dev * char_lcd_dev,
 		alt_up_pixel_buffer_dma_dev* pixel_buffer,
 		RenderObjectStructure *renderObjectStructure,
-		BlockObjectStructure *blockObjectStructure) {
+		BlockObjectStructure *blockObjectStructure,
+		Paddle* paddle) {
 	int ret = 1;
 
 	// Open SDCard port
@@ -52,6 +55,7 @@ int InitializeComponents(alt_up_sd_card_dev* sd_dev,
 	// Open render structure
 	InitializeRenderObjectStructure(renderObjectStructure);
 	InitializeBlockObjectStructure(blockObjectStructure, renderObjectStructure);
+	InitializePaddle(paddle);
 
 	return ret;
 }
@@ -62,6 +66,7 @@ int main() {
 	alt_up_pixel_buffer_dma_dev* pixel_buffer;
 	RenderObjectStructure renderObjectStructure;
 	BlockObjectStructure blockObjectStructure;
+	Paddle paddle;
 
 	// Surpress the 'unused' warnings
 	(void) sd_dev;
@@ -73,7 +78,7 @@ int main() {
 	printf("Game Start!\n");
 
 	if (!InitializeComponents(sd_dev, char_lcd_dev, pixel_buffer,
-			&renderObjectStructure, &blockObjectStructure)) {
+			&renderObjectStructure, &blockObjectStructure, &paddle)) {
 		printf("Error with initialization\n");
 		return 0;
 	}
