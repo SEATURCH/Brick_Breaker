@@ -5,6 +5,8 @@
  *      Author: Himanshu
  *  Modified on: Jan 25, 2015
  *  	Author: Alan
+ *  Modified on: Jan 28, 2015
+ *	Author: Francis
  */
 
 #include "../include/vga_graphics.h"
@@ -46,6 +48,14 @@ void DrawFPGABallObject(int renderObjectStartX, int renderObjectStartY,
 	// wait until done
 	while (IORD_32DIRECT(DRAWER_BASE,20) == 0)
 		;
+}
+
+void DrawFPGAPaddleObject (Paddle* paddle, int color) { //The color is added just so we can erase the paddle
+	DrawBoxFPGA(paddle->x_pos,
+			paddle->y_pos,
+			paddle->x_pos + paddle->width,
+			paddle->y_pos + paddle->height,
+			color);
 }
 
 void DrawBallObjectMovement(RenderObjectStructure *renderObjectStructure) {
@@ -165,7 +175,7 @@ int InitializeVGA(alt_up_pixel_buffer_dma_dev *pixel_buffer) {
 	if (pixel_buffer == NULL) {
 		return 0;
 	}
-	// Set the background buffer address – Although we don’t use the background,
+	// Set the background buffer address â€“ Although we donâ€™t use the background,
 	// they only provide a function to change the background buffer address, so
 	// we must set that, and then swap it to the foreground.
 	alt_up_pixel_buffer_dma_change_back_buffer_address(pixel_buffer,
@@ -207,6 +217,14 @@ void InitializeBlockObjectStructure(BlockObjectStructure * blockObjectStructure,
 		blockObjectStructure->blockObjects[blockObjectCursor].isActive = FALSE;
 	}
 	blockObjectStructure->numBlocksSet = 0;
+}
+
+void InitializePaddle(Paddle* paddle) {
+	paddle->x_pos = INITIAL_PADDLE_X_POS;
+	paddle->y_pos = INITIAL_PADDLE_Y_POS;
+	paddle->height = DEFAULT_PADDLE_HEIGHT;
+	paddle->width = DEFAULT_PADDLE_WIDTH;
+	paddle->color = DEFAULT_PADDLE_COLOR;
 }
 
 // Adds a block to the screen at (renderObjectXStart, renderObjectYStart), with default attributes
@@ -256,6 +274,21 @@ void MapBlockObjectStructureToRender(
 	}
 }
 
+// Paddle movement functions
+
+void MovePaddle(Paddle* paddle,int paddleNextPosX) {
+	// Update paddle x position with error checking, ONLY clear the previous paddle position if we have a legitimate movement
+	if ((paddleNextPosX >= 0) &&
+			((paddleNextPosX + paddle->width) <= (SCREEN_WIDTH - 1))) {
+		// Clear out the paddle in the current position
+		DrawFPGAPaddleObject(paddle, SCREEN_BACKGROUND_COLOR);
+		paddle->x_pos = paddleNextPosX;
+	}
+
+	// Draw the paddle in the new position
+	DrawFPGAPaddleObject(paddle, paddle->color);
+}
+
 // Test func
 void SetRandomColors(RenderObjectStructure *renderObjectStructure) {
 	// Set the color of all render objects to a pseudo-random color based off the cursor
@@ -286,7 +319,7 @@ void draw_random_boxes_forever() {
 	// Use the name of your pixel buffer DMA core
 	pixel_buffer = alt_up_pixel_buffer_dma_open_dev("/dev/pixel_buffer_dma");
 
-	// Set the background buffer address – Although we don’t use the background,
+	// Set the background buffer address â€“ Although we donâ€™t use the background,
 	// they only provide a function to change the background buffer address, so
 	// we must set that, and then swap it to the foreground.
 	alt_up_pixel_buffer_dma_change_back_buffer_address(pixel_buffer,
