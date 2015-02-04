@@ -23,7 +23,8 @@ ENTITY Base IS
 		VGA_CLK, VGA_BLANK, VGA_HS, VGA_VS, VGA_SYNC : out std_logic;
 		SRAM_DQ : inout std_logic_vector(15 downto 0);
 		SRAM_ADDR : out std_logic_vector(17 downto 0);
-		SRAM_LB_N, SRAM_UB_N, SRAM_CE_N, SRAM_OE_N, SRAM_WE_N : out std_logic
+		SRAM_LB_N, SRAM_UB_N, SRAM_CE_N, SRAM_OE_N, SRAM_WE_N : out std_logic;
+		GPIO_1: inout std_LOGIC_vector(36 downto 0)
 	);
 END Base;
 
@@ -70,7 +71,11 @@ ARCHITECTURE Structure OF Base IS
 			vga_controller_SYNC  : out   std_logic;                                        
 			vga_controller_R     : out   std_logic_vector(9 downto 0);                     
 			vga_controller_G     : out   std_logic_vector(9 downto 0);                     
-			vga_controller_B     : out   std_logic_vector(9 downto 0)                      
+			vga_controller_B     : out   std_logic_vector(9 downto 0);
+			spi_MISO : IN std_LOGIC;
+			spi_MOSI: out std_LOGIC;
+			spi_SCLK : out std_LOGIC;
+			spi_SS_n: out std_LOGIC			
 		);
 	END COMPONENT;
 	SIGNAL DQM : STD_LOGIC_VECTOR(1 DOWNTO 0);
@@ -121,6 +126,10 @@ BEGIN
 		vga_controller_SYNC  => VGA_SYNC,  
 		vga_controller_R     => VGA_R,     
 		vga_controller_G     => VGA_G,     
-		vga_controller_B     => VGA_B      
+		vga_controller_B     => VGA_B,
+		spi_MISO => GPIO_1(0),
+		spi_MOSI => GPIO_1(1),
+		spi_SS_n => GPIO_1(2),
+		spi_SCLK => GPIO_1(4)      
 	);
 END Structure;

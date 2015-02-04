@@ -262,19 +262,6 @@
          type = "int";
       }
    }
-   element switches.s1
-   {
-      datum _lockedAddress
-      {
-         value = "1";
-         type = "boolean";
-      }
-      datum baseAddress
-      {
-         value = "18560";
-         type = "String";
-      }
-   }
    element LEDs.s1
    {
       datum _lockedAddress
@@ -301,7 +288,7 @@
          type = "String";
       }
    }
-   element timer.s1
+   element onchip_memory2_0.s1
    {
       datum _lockedAddress
       {
@@ -310,7 +297,7 @@
       }
       datum baseAddress
       {
-         value = "18496";
+         value = "0";
          type = "String";
       }
    }
@@ -327,7 +314,7 @@
          type = "String";
       }
    }
-   element onchip_memory2_0.s1
+   element switches.s1
    {
       datum _lockedAddress
       {
@@ -336,7 +323,20 @@
       }
       datum baseAddress
       {
-         value = "0";
+         value = "18560";
+         type = "String";
+      }
+   }
+   element timer.s1
+   {
+      datum _lockedAddress
+      {
+         value = "1";
+         type = "boolean";
+      }
+      datum baseAddress
+      {
+         value = "18496";
          type = "String";
       }
    }
@@ -411,7 +411,7 @@
  <parameter name="projectName" value="Base.qpf" />
  <parameter name="sopcBorderPoints" value="false" />
  <parameter name="systemHash" value="1" />
- <parameter name="timeStamp" value="1422606596723" />
+ <parameter name="timeStamp" value="1423011555051" />
  <parameter name="useTestBenchNamingPattern" value="false" />
  <instanceScript></instanceScript>
  <interface name="clk" internal="clk_0.clk_in" type="clock" dir="end" />
@@ -1385,7 +1385,6 @@
    version="13.0"
    start="nios2_qsys_0.jtag_debug_module_reset"
    end="spi.reset" />
- <connection kind="clock" version="13.0" start="clocks.sys_clk" end="spi.clk" />
  <connection
    kind="avalon"
    version="13.0"
@@ -1395,6 +1394,7 @@
   <parameter name="baseAddress" value="0x1000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
+ <connection kind="clock" version="13.0" start="clocks.sys_clk" end="spi.clk" />
  <connection
    kind="interrupt"
    version="13.0"
