@@ -15,8 +15,10 @@
 #include "../include/vga_graphics.h"
 #include "../include/character_lcd.h"
 #include "../include/timestamp_timer.h"
+#include "../include/import_export.h"
 
 #define PERFORM_EXERCISES 0
+#define PERFORM_EXPORTIMPORT 1
 
 // Returns:
 // 0 if not successful
@@ -25,8 +27,7 @@ int InitializeComponents(alt_up_sd_card_dev* sd_dev,
 		alt_up_character_lcd_dev * char_lcd_dev,
 		alt_up_pixel_buffer_dma_dev* pixel_buffer,
 		RenderObjectStructure *renderObjectStructure,
-		BlockObjectStructure *blockObjectStructure,
-		Paddle* paddle) {
+		BlockObjectStructure *blockObjectStructure, Paddle* paddle) {
 	int ret = 1;
 
 	// Open SDCard port
@@ -83,41 +84,29 @@ int main() {
 		return 0;
 	}
 
-	// This sets the render object's to pseudo-random colors.
-	// Use this to test that display is working correctly.
-	{
-		//SetRandomColors(&renderObjectStructure);
-		SetBlack(&renderObjectStructure);
-	}
-
-	// GENERATE BLOCK STRUCTURE HERE
-	// Additional AddBlock functions can be added in the future
-	//  i.e. add power-up block, or add a smaller sized block, etc
-
 	// SAMPLE SUBROUTINE: Checkerboard
-/*	{
-		int i, j;
-		for (j = 0; (j + DEFAULT_BLOCK_HEIGHT - 1) < NUM_RENDER_OBJECTS_HEIGHT;
-				j += 3) {
-			for (i = 0;
-					(i + DEFAULT_BLOCK_WIDTH - 1) < NUM_RENDER_OBJECTS_WIDTH;
-					i += 4) {
-				AddBlock(&blockObjectStructure, i, j);
-			}
-		}
-	}*/
+	/*{
+	 int i, j;
+	 for (j = 0; (j + DEFAULT_BLOCK_HEIGHT - 1) < NUM_RENDER_OBJECTS_HEIGHT;
+	 j += 3) {
+	 for (i = 0;
+	 (i + DEFAULT_BLOCK_WIDTH - 1) < NUM_RENDER_OBJECTS_WIDTH;
+	 i += 4) {
+	 AddBlock(&blockObjectStructure, i, j, DEFAULT_BLOCK_WIDTH,
+	 DEFAULT_BLOCK_HEIGHT, SingleHealth);
+	 }
+	 }
+	 }*/
 
 	{
-			int i, j;
-			for (j = 5; (j + DEFAULT_BLOCK_HEIGHT - 1) < 10;
-					j +=2) {
-				for (i = 10;
-						(i + DEFAULT_BLOCK_WIDTH - 1) < 20;
-						i +=3) {
-					AddBlock(&blockObjectStructure, i, j);
-				}
+		int i, j;
+		for (j = 5; (j + DEFAULT_BLOCK_HEIGHT - 1) < 10; j += 2) {
+			for (i = 10; (i + DEFAULT_BLOCK_WIDTH - 1) < 20; i += 3) {
+				AddBlock(&blockObjectStructure, i, j, DEFAULT_BLOCK_WIDTH,
+						DEFAULT_BLOCK_HEIGHT, SingleHealth);
 			}
 		}
+	}
 
 	// Map the blocks that were just added
 	MapBlockObjectStructureToRender(&blockObjectStructure,
@@ -127,24 +116,31 @@ int main() {
 	// This only has to be done once
 	DrawRenderObjectStructure(&renderObjectStructure);
 
+#if PERFORM_EXPORTIMPORT
+	// ** PURELY TESTING OF IMPORT/EXPORT ** //
+	// This function exports the current block structure, and then reads it back in
+	{
+#define BUFFERLEN 500
+		unsigned char buffer[BUFFERLEN] = { 0 };
+
+		// Export the block data structure
+		ExportBlockDataStructure(&renderObjectStructure, &blockObjectStructure,
+				buffer, BUFFERLEN);
+
+		// Import the just-exported block data structure
+		// This resets the render and block object structures and
+		// sets them to the previous set-up
+		ImportBlockDataStructure(&renderObjectStructure, &blockObjectStructure,
+				buffer, BUFFERLEN);
+
+	}
+#endif
+
 	// MAIN LOOP GOES HERE
 
 	{
-		// One loop iteration: 1 frame
-
-
-		// Calculate ball movement
-
-		// Erase last ball position
-
-		// Draw new ball position
-
-		// The size of the ball is up to you, but it should be <= the size of a render object (RENDER_OBJECT_WIDTH)
-		// Use CPU function to draw square ball:
-		//alt_up_pixel_buffer_dma_draw_box(pixel_buffer, x1, y1, x2, y2,
-		//		color, 0);
-
-		DrawBallObjectMovement(&blockObjectStructure, &renderObjectStructure, &paddle); // still hardcoded
+		DrawBallObjectMovement(&blockObjectStructure, &renderObjectStructure,
+				&paddle);
 	}
 
 #if PERFORM_EXERCISES == 1

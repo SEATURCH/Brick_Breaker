@@ -32,11 +32,9 @@
 #define RENDER_OBJECT_HEIGHT			8
 
 #define RENDER_TO_BALL_RATIO			2	// must be a whole number
-
 #define BALL_OBJECT_WIDTH				RENDER_OBJECT_WIDTH/RENDER_TO_BALL_RATIO
 #define BALL_OBJECT_HEIGHT				BALL_OBJECT_WIDTH 		// enforce it to be square
 #define BALL_SPEED						1 	// must be a whole number to move in straight line
-
 #define BLOCK_AREA_LIMIT				SCREEN_HEIGHT_BLOCKAREA - BALL_OBJECT_WIDTH
 
 #define BALL_COLOUR						0x001F
@@ -106,7 +104,7 @@ typedef struct BlockObject {
 // This BlockObjectStructure acts as a scratch buffer for blocks. It starts out empty, and is then occupied in the beginning
 typedef struct BlockObjectStructure {
 	BlockObject blockObjects[DEFAULT_MAX_BLOCKS];
-	int numBlocksSet;
+	unsigned char numBlocksSet;
 } BlockObjectStructure;
 
 // Structure for the paddle
@@ -123,7 +121,7 @@ void DrawBoxFPGA(int x1, int y1, int x2, int y2, int color);
 void DrawFPGARenderObject(int renderObjectStartX, int renderObjectStartY,
 		int color);
 void DrawRenderObjectStructure(RenderObjectStructure *renderObjectStructure);
-void DrawFPGAPaddleObject (Paddle* paddle, int color);
+void DrawFPGAPaddleObject(Paddle* paddle, int color);
 
 // Initialization
 int InitializeVGA(alt_up_pixel_buffer_dma_dev *pixel_buffer);
@@ -135,29 +133,26 @@ void InitializePaddle(Paddle* paddle);
 
 // Methods
 void AddBlock(BlockObjectStructure * blockObjectStructure,
-		int renderObjectXStart, int renderObjectYStart);
+		int renderObjectXStart, int renderObjectYStart, int blockWidth,
+		int blockHeight, int blockType);
 
 void MapBlockObjectStructureToRender(
 		BlockObjectStructure * blockObjectStructure,
 		RenderObjectStructure *renderObjectStructure);
-void DrawBallObjectMovement(
-		BlockObjectStructure *blockObjectStructure,
-		RenderObjectStructure *renderObjectStructure,
-		Paddle *paddle);
+void DrawBallObjectMovement(BlockObjectStructure *blockObjectStructure,
+		RenderObjectStructure *renderObjectStructure, Paddle *paddle);
 void DrawFPGABallObject(int renderObjectStartX, int renderObjectStartY,
 		int color);
-void MovePaddle(Paddle* paddle,int paddleNextPosX);
+void MovePaddle(Paddle* paddle, int paddleNextPosX);
 // Test funcs
 void SetRandomColors(RenderObjectStructure *renderObjectStructure);
 void SetBlack(RenderObjectStructure *renderObjectStructure);
 void draw_random_boxes_forever();
 void draw_diagonal_line_with_character();
-void EraseBlockAndResetRenderObjects(
-		int blockCursor,
+void EraseBlockAndResetRenderObjects(int blockCursor,
 		BlockObjectStructure * blockObjectStructure,
 		RenderObjectStructure *renderObjectStructure);
-int DetectCollision(
-		int index, int oldCursorX, int oldCursorY, int offset,
+int DetectCollision(int index, int oldCursorX, int oldCursorY, int offset,
 		RenderObjectStructure *renderObjectStructure,
 		BlockObjectStructure *blockObjectStructure);
 #endif /* VGA_GRAPHICS_H_ */
