@@ -56,8 +56,8 @@ void DrawFPGAPaddleObject(Paddle* paddle, int color) { //The color is added just
 }
 void DrawBallObjectMovement(BlockObjectStructure *blockObjectStructure,
 		RenderObjectStructure *renderObjectStructure, Paddle *paddle) {
-	int cursorY = 72;
-	int cursorX = 72;
+	int cursorY = 8;
+	int cursorX = 8;
 	int Xspeed = BALL_SPEED;
 	int Yspeed = BALL_SPEED;
 	int Xdir = 1;
@@ -66,9 +66,9 @@ void DrawBallObjectMovement(BlockObjectStructure *blockObjectStructure,
 	int oldCursorY = cursorY;
 	BlockObject *blockObject;
 	int L1, L2, R1, R2, offset, temp_moveX, temp_moveY, temp_index, temp1 = 0,
-			temp2;
+			temp2, tempx, tempy, xtemp, ytemp;
 	int potential_L1_index, potential_L2_index, potential_R1_index,
-			potential_R2_index, old_L1_index;
+			potential_R2_index, old_L1_index, call_detect_num;
 
 	int collision = 0; // assume
 	int paddle_collision = 0;
@@ -76,8 +76,11 @@ void DrawBallObjectMovement(BlockObjectStructure *blockObjectStructure,
 	int* spi_read;
 	spi_read = (int*) malloc(1);
 	*spi_read = 0;
+	if (alt_timestamp_start() < 0) {
+		printf("No timestamp device is available.\n");
+	}
 	while (1) {
-		sleep(1);
+		//  sleep(1);
 		L1 = (L2) = (R1) = (R2) = -1;
 		// use SCREEN_HEIGHT_BLOCKAREA instead of BLOCK_AREA_LIMIT
 		// because ball can come from below (outside block area) as well
@@ -95,7 +98,7 @@ void DrawBallObjectMovement(BlockObjectStructure *blockObjectStructure,
 		if (cursorY <= BLOCK_AREA_LIMIT && cursorY >= 0 && cursorX <= X_LIMIT
 				&& cursorX >= 0) {
 			//define new potential position
-
+if(0){
 			potential_L1_index = ((cursorY / 8) * (40)) + (cursorX / 8);
 			potential_L2_index = (((cursorY + BALL_OBJECT_HEIGHT) / 8) * (40))
 					+ (cursorX / 8);
@@ -108,10 +111,10 @@ void DrawBallObjectMovement(BlockObjectStructure *blockObjectStructure,
 				offset = 41;
 			if (Xdir < 0 && Ydir > 0) {
 				offset = 39;
-				potential_R1_index = potential_L1_index;
+				potential_R1_index = potential_L1_index - 1;
 				temp_index = potential_R2_index;
-				potential_R2_index = potential_L2_index;
-				potential_L2_index = temp_index;
+				potential_R2_index = potential_L2_index - 1;
+				potential_L2_index = temp_index -1;
 			}
 			if (Xdir > 0 && Ydir < 0) {
 				offset = -39;
@@ -127,22 +130,80 @@ void DrawBallObjectMovement(BlockObjectStructure *blockObjectStructure,
 				potential_R1_index = potential_L2_index;
 				potential_L2_index = temp_index;
 			}
+		}
+			if(1){
+				potential_L1_index = ((cursorY / 8) * (40)) + (cursorX / 8);
+				if (Xdir > 0 && Ydir > 0){
+					offset = 41;
+					call_detect_num = 1;
+				potential_L2_index = potential_L1_index + 40;
+				potential_R2_index = potential_L2_index + 1;
+				potential_R1_index = potential_L1_index + 1;
+				}
+				else if (Xdir < 0 && Ydir > 0) {
+					offset = 39;
+					call_detect_num = 2;
+					potential_R1_index = potential_L1_index - 1;
+					potential_R2_index = potential_R1_index + 40;
+					potential_L2_index = potential_R2_index + 1;
+				}
+				else if (Xdir > 0 && Ydir < 0) {
+					offset = -39;
+					call_detect_num = 3;
+					potential_L2_index = potential_L1_index - 40;
+					potential_R2_index = potential_L2_index + 1;
+					potential_R1_index = potential_R2_index + 40;
+				}
+				else if (Xdir < 0 && Ydir < 0) {
+					tempx = cursorX / 8;
+					tempy = cursorY / 8;
+					xtemp = tempx * 8;
+					ytemp = tempy * 8;
+					if(tempx == xtemp && tempy == ytemp){
+						potential_R2_index = -1;
+						potential_L2_index = potential_L1_index - 40;
+						potential_R1_index = potential_L1_index - 1;
+					}
+					else if(tempx == xtemp && tempy != ytemp){
+						potential_R2_index = potential_L1_index - 1;
+						potential_L2_index = potential_L1_index;
+						potential_R1_index = -1;
+					}
+					else if(tempx != xtemp && tempy == ytemp){
+						potential_R2_index = potential_L1_index - 40;
+						potential_L2_index = -1;
+						potential_R1_index = potential_L1_index;
+					}
+					else if(tempx != xtemp && tempy != ytemp){
+						potential_R2_index = potential_L1_index;
+						potential_L2_index = potential_L1_index + 1;
+						potential_R1_index = potential_L1_index + 40;
+					}
+					offset = -41;
+					call_detect_num = 4;
+					/*
+					potential_L2_index = potential_L1_index + 1;
+					potential_R2_index = potential_L1_index;
+					potential_R1_index = potential_R2_index + 40;
+					*/
+				}
+			}
 
 			if (potential_R2_index
 					>= 0&& potential_R2_index < NUM_RENDER_OBJECTS_TOTAL) {
-				R2 = DetectCollision(potential_R2_index, oldCursorX, oldCursorY,
+				R2 = select_detect(call_detect_num, potential_R2_index, oldCursorX, oldCursorY, cursorX, cursorY,
 						offset, renderObjectStructure, blockObjectStructure);
 			}
 
 			if (potential_L2_index
 					>= 0&& potential_L2_index < NUM_RENDER_OBJECTS_TOTAL) {
-				L2 = DetectCollision(potential_L2_index, oldCursorX, oldCursorY,
+				L2 = select_detect(call_detect_num, potential_L2_index, oldCursorX, oldCursorY, cursorX, cursorY,
 						offset, renderObjectStructure, blockObjectStructure);
 			}
 
 			if (potential_R1_index
 					>= 0&& potential_R1_index < NUM_RENDER_OBJECTS_TOTAL) {
-				R1 = DetectCollision(potential_R1_index, oldCursorX, oldCursorY,
+				R1 = select_detect(call_detect_num, potential_R1_index, oldCursorX, oldCursorY, cursorX, cursorY,
 						offset, renderObjectStructure, blockObjectStructure);
 			}
 
@@ -181,7 +242,7 @@ void DrawBallObjectMovement(BlockObjectStructure *blockObjectStructure,
 			}
 		}
 		// position = paddleposition(spi_read);
-		// MovePaddle(paddle, position); // use it with IR sensor
+		// MovePaddle(paddle, position);
 		if (*switches == 0x01 && temp1 <= X_LIMIT) {
 			temp1 += 4;
 		} else if (*switches == 0x00 && temp1 >= 4) {
@@ -191,7 +252,8 @@ void DrawBallObjectMovement(BlockObjectStructure *blockObjectStructure,
 		if (cursorY == (INITIAL_PADDLE_Y_POS - BALL_OBJECT_HEIGHT)
 				&& cursorX < (paddle->x_pos + DEFAULT_PADDLE_WIDTH)
 				&& cursorX >= (paddle->x_pos - BALL_OBJECT_WIDTH)) {
-			/*	temp1 = cursorX - paddle->x_pos;
+			/*
+			 temp1 = cursorX - paddle->x_pos;
 			 temp2 = DEFAULT_PADDLE_WIDTH - BALL_OBJECT_WIDTH;
 			 if(temp1 < 0){
 			 Xdir = -1;
@@ -213,6 +275,11 @@ void DrawBallObjectMovement(BlockObjectStructure *blockObjectStructure,
 			// GOTO
 
 		}
+		while (alt_timestamp() < 900000) {
+		} //waste cpu cycle for 18 ms (a bit more frame rate)
+		if (alt_timestamp_start() < 0) {
+			printf("No timestamp device is available.\n");
+		}
 		DrawFPGABallObject(oldCursorX, oldCursorY, SCREEN_BACKGROUND_COLOR);
 		DrawFPGABallObject(cursorX, cursorY, BALL_COLOUR);
 		if (collision) {
@@ -225,31 +292,192 @@ void DrawBallObjectMovement(BlockObjectStructure *blockObjectStructure,
 					renderObjectStructure);
 		}
 	}
+}
 
-	int DetectCollision(int index, int oldCursorX, int oldCursorY, int offset,
-			RenderObjectStructure *renderObjectStructure,
-			BlockObjectStructure *blockObjectStructure) {
-		int blockCursor = renderObjectStructure->blockNumber[index];
-		BlockObject *blockObject =
-				&blockObjectStructure->blockObjects[blockCursor];
-		int Xstart = blockObject->blockXStart * RENDER_OBJECT_WIDTH;
-		int Ystart = blockObject->blockYStart * RENDER_OBJECT_HEIGHT;
-		int ret = -1;
-		while ((blockCursor != -1)
-				&& (Xstart > oldCursorX || Ystart > oldCursorY)) { // ther's a block and condition met
-			ret = blockCursor; // will collide with ball
-			//collision = 1;
-			index -= offset;
-			if (index < 0 || index > NUM_RENDER_OBJECTS_TOTAL) {
-				break;
-			}
-			blockCursor = renderObjectStructure->blockNumber[index];
-			blockObject = &blockObjectStructure->blockObjects[blockCursor];
-		}
-		//collide with render object at L2
-		index += 41; // true index - if want to use in future
-		return ret;
+int select_detect(int call_detect_num, int index, int oldCursorX, int oldCursorY, int cursorX, int cursorY, int offset,
+		RenderObjectStructure *renderObjectStructure,
+		BlockObjectStructure *blockObjectStructure){
+	int ret;
+	if(call_detect_num == 1){
+		ret = DetectCollision1(index, oldCursorX, oldCursorY, cursorX, cursorY,
+						offset, renderObjectStructure, blockObjectStructure);
 	}
+	else if(call_detect_num == 2){
+			ret = DetectCollision2(index, oldCursorX, oldCursorY, cursorX, cursorY,
+							offset, renderObjectStructure, blockObjectStructure);
+		}
+	else if(call_detect_num == 3){
+			ret = DetectCollision3(index, oldCursorX, oldCursorY, cursorX, cursorY,
+							offset, renderObjectStructure, blockObjectStructure);
+		}
+	else if(call_detect_num == 4){
+			ret = DetectCollision4(index, oldCursorX, oldCursorY, cursorX, cursorY,
+							offset, renderObjectStructure, blockObjectStructure);
+		}
+	return ret;
+}
+
+int DetectCollision1(
+        int index, int oldCursorX, int oldCursorY, int cursorX, int cursorY, int offset,
+        RenderObjectStructure *renderObjectStructure,
+        BlockObjectStructure *blockObjectStructure){
+    int blockCursor = renderObjectStructure->blockNumber[index];
+    BlockObject *blockObject =
+                    &blockObjectStructure->blockObjects[blockCursor];
+    int Xstart = blockObject->blockXStart * RENDER_OBJECT_WIDTH;
+    int Ystart = blockObject->blockYStart * RENDER_OBJECT_HEIGHT;
+    oldCursorX = oldCursorX + BALL_OBJECT_WIDTH;
+    oldCursorY = oldCursorY + BALL_OBJECT_HEIGHT;
+    cursorX += BALL_OBJECT_WIDTH;
+    cursorY += BALL_OBJECT_HEIGHT;
+    int ret = -1;
+    while((blockCursor != -1) &&
+            !(Xstart < oldCursorX &&
+                    Ystart < oldCursorY) &&
+                    (Xstart <= cursorX &&
+                            Ystart <= cursorY)){ // ther's a block and condition met
+        ret = blockCursor; // will collide with ball
+        //collision = 1;
+        index -= offset;
+        if(index < 0 || index > NUM_RENDER_OBJECTS_TOTAL){
+            break;
+        }
+        blockCursor = renderObjectStructure->blockNumber[index];
+        blockObject = &blockObjectStructure->blockObjects[blockCursor];
+        Xstart = blockObject->blockXStart * RENDER_OBJECT_WIDTH;
+        Ystart = blockObject->blockYStart * RENDER_OBJECT_HEIGHT;
+    }
+    //collide with render object at L2
+    index += 41; // true index - if want to use in future
+    return ret;
+}
+int DetectCollision2(
+        int index, int oldCursorX, int oldCursorY, int cursorX, int cursorY, int offset,
+        RenderObjectStructure *renderObjectStructure,
+        BlockObjectStructure *blockObjectStructure){
+    int blockCursor = renderObjectStructure->blockNumber[index];
+    BlockObject *blockObject =
+                    &blockObjectStructure->blockObjects[blockCursor];
+    int Xstart = (blockObject->blockXStart * RENDER_OBJECT_WIDTH) + RENDER_OBJECT_WIDTH;
+    int Ystart = blockObject->blockYStart * RENDER_OBJECT_HEIGHT;
+  //  oldCursorX = oldCursorX;
+    oldCursorY = oldCursorY + BALL_OBJECT_HEIGHT;
+   // cursorX += BALL_OBJECT_WIDTH;
+    cursorY += BALL_OBJECT_HEIGHT;
+    int ret = -1;
+    while((blockCursor != -1) &&
+            !(Xstart > oldCursorX &&
+                    Ystart < oldCursorY) &&
+                    (Xstart >= cursorX &&
+                            Ystart <= cursorY)){ // ther's a block and condition met
+        ret = blockCursor; // will collide with ball
+        //collision = 1;
+        index -= offset;
+        if(index < 0 || index > NUM_RENDER_OBJECTS_TOTAL){
+            break;
+        }
+        blockCursor = renderObjectStructure->blockNumber[index];
+        blockObject = &blockObjectStructure->blockObjects[blockCursor];
+        Xstart = (blockObject->blockXStart * RENDER_OBJECT_WIDTH) + RENDER_OBJECT_WIDTH;
+        Ystart = blockObject->blockYStart * RENDER_OBJECT_HEIGHT;
+    }
+    //collide with render object at L2
+    index += 41; // true index - if want to use in future
+    return ret;
+}
+int DetectCollision3(
+        int index, int oldCursorX, int oldCursorY, int cursorX, int cursorY, int offset,
+        RenderObjectStructure *renderObjectStructure,
+        BlockObjectStructure *blockObjectStructure){
+    int blockCursor = renderObjectStructure->blockNumber[index];
+    BlockObject *blockObject =
+                    &blockObjectStructure->blockObjects[blockCursor];
+    int Xstart = blockObject->blockXStart * RENDER_OBJECT_WIDTH;
+    int Ystart = (blockObject->blockYStart * RENDER_OBJECT_HEIGHT) + RENDER_OBJECT_HEIGHT;
+    oldCursorX = oldCursorX + BALL_OBJECT_WIDTH;
+ //   oldCursorY = oldCursorY + BALL_OBJECT_HEIGHT;
+    cursorX += BALL_OBJECT_WIDTH;
+ //   cursorY += BALL_OBJECT_HEIGHT;
+    int ret = -1;
+    while((blockCursor != -1) &&
+            !(Xstart < oldCursorX &&
+                    Ystart > oldCursorY) &&
+                    (Xstart <= cursorX &&
+                            Ystart >= cursorY)){ // ther's a block and condition met
+        ret = blockCursor; // will collide with ball
+        //collision = 1;
+        index -= offset;
+        if(index < 0 || index > NUM_RENDER_OBJECTS_TOTAL){
+            break;
+        }
+        blockCursor = renderObjectStructure->blockNumber[index];
+        blockObject = &blockObjectStructure->blockObjects[blockCursor];
+        Xstart = blockObject->blockXStart * RENDER_OBJECT_WIDTH;
+        Ystart = (blockObject->blockYStart * RENDER_OBJECT_HEIGHT) + RENDER_OBJECT_HEIGHT;
+    }
+    //collide with render object at L2
+    index += 41; // true index - if want to use in future
+    return ret;
+}
+int DetectCollision4(
+        int index, int oldCursorX, int oldCursorY, int cursorX, int cursorY, int offset,
+        RenderObjectStructure *renderObjectStructure,
+        BlockObjectStructure *blockObjectStructure){
+    int blockCursor = renderObjectStructure->blockNumber[index];
+    BlockObject *blockObject =
+                    &blockObjectStructure->blockObjects[blockCursor];
+    int Xstart = (blockObject->blockXStart * RENDER_OBJECT_WIDTH) + RENDER_OBJECT_WIDTH;
+    int Ystart = (blockObject->blockYStart * RENDER_OBJECT_HEIGHT) + RENDER_OBJECT_HEIGHT;
+  //  oldCursorX = oldCursorX + BALL_OBJECT_WIDTH;
+  //  oldCursorY = oldCursorY + BALL_OBJECT_HEIGHT;
+   // cursorX += BALL_OBJECT_WIDTH;
+   // cursorY += BALL_OBJECT_HEIGHT;
+    int ret = -1;
+    while((blockCursor != -1) &&
+            !(Xstart > oldCursorX &&
+                    Ystart > oldCursorY) &&
+                    (Xstart >= cursorX &&
+                            Ystart >= cursorY)){ // ther's a block and condition met
+        ret = blockCursor; // will collide with ball
+        //collision = 1;
+        index -= offset;
+        if(index < 0 || index > NUM_RENDER_OBJECTS_TOTAL){
+            break;
+        }
+        blockCursor = renderObjectStructure->blockNumber[index];
+        blockObject = &blockObjectStructure->blockObjects[blockCursor];
+        Xstart = (blockObject->blockXStart * RENDER_OBJECT_WIDTH) + RENDER_OBJECT_WIDTH;
+        Ystart = (blockObject->blockYStart * RENDER_OBJECT_HEIGHT) + RENDER_OBJECT_HEIGHT;
+    }
+    //collide with render object at L2
+    index += 41; // true index - if want to use in future
+    return ret;
+}
+
+/*
+int DetectCollision(int index, int oldCursorX, int oldCursorY, int offset,
+		RenderObjectStructure *renderObjectStructure,
+		BlockObjectStructure *blockObjectStructure) {
+	int blockCursor = renderObjectStructure->blockNumber[index];
+	BlockObject *blockObject = &blockObjectStructure->blockObjects[blockCursor];
+	int Xstart = blockObject->blockXStart * RENDER_OBJECT_WIDTH;
+	int Ystart = blockObject->blockYStart * RENDER_OBJECT_HEIGHT;
+	int ret = -1;
+	while ((blockCursor != -1) && (Xstart > oldCursorX || Ystart > oldCursorY)) { // ther's a block and condition met
+		ret = blockCursor; // will collide with ball
+		//collision = 1;
+		index -= offset;
+		if (index < 0 || index > NUM_RENDER_OBJECTS_TOTAL) {
+			break;
+		}
+		blockCursor = renderObjectStructure->blockNumber[index];
+		blockObject = &blockObjectStructure->blockObjects[blockCursor];
+	}
+	//collide with render object at L2
+	index += 41; // true index - if want to use in future
+	return ret;
+}
+*/
 
 	void DrawFPGARenderObject(int renderObjectStartX, int renderObjectStartY,
 			int color) {

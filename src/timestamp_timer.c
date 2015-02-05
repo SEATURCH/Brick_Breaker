@@ -51,3 +51,15 @@ void sleep(unsigned int seconds){
 			}
 		}
 }
+
+void wait_16ms(){
+	alt_u32 start_time;
+	alt_u32 end_time;
+			if (alt_timestamp_start() < 0){
+				printf("No timestamp device is available.\n");
+			}else{
+				start_time = alt_timestamp();
+				while(alt_timestamp() < 800000){} // waste cpu cycle
+			}
+			end_time = alt_timestamp();
+}

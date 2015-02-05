@@ -16,5 +16,6 @@
 
 void exer2();
 void sleep(unsigned int seconds);
+void wait_16ms();
 
 #endif /* TIMESTAMP_TIMER_H_ */

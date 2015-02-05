@@ -152,7 +152,23 @@ void draw_diagonal_line_with_character();
 void EraseBlockAndResetRenderObjects(int blockCursor,
 		BlockObjectStructure * blockObjectStructure,
 		RenderObjectStructure *renderObjectStructure);
-int DetectCollision(int index, int oldCursorX, int oldCursorY, int offset,
+int DetectCollision1(
+		int index, int oldCursorX, int oldCursorY, int cursorX, int cursorY, int offset,
+		RenderObjectStructure *renderObjectStructure,
+		BlockObjectStructure *blockObjectStructure);
+int DetectCollision2(
+		int index, int oldCursorX, int oldCursorY, int cursorX, int cursorY, int offset,
+		RenderObjectStructure *renderObjectStructure,
+		BlockObjectStructure *blockObjectStructure);
+int DetectCollision3(
+		int index, int oldCursorX, int oldCursorY, int cursorX, int cursorY, int offset,
+		RenderObjectStructure *renderObjectStructure,
+		BlockObjectStructure *blockObjectStructure);
+int DetectCollision4(
+		int index, int oldCursorX, int oldCursorY, int cursorX, int cursorY, int offset,
+		RenderObjectStructure *renderObjectStructure,
+		BlockObjectStructure *blockObjectStructure);
+int select_detect(int call_detect_num, int index, int oldCursorX, int oldCursorY, int cursorX, int cursorY, int offset,
 		RenderObjectStructure *renderObjectStructure,
 		BlockObjectStructure *blockObjectStructure);
 #endif /* VGA_GRAPHICS_H_ */
