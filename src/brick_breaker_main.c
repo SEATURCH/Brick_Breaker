@@ -16,6 +16,7 @@
 #include "../include/character_lcd.h"
 #include "../include/timestamp_timer.h"
 #include "../include/import_export.h"
+#include "../include/ball.h"
 
 #define PERFORM_EXERCISES 0
 #define PERFORM_EXPORTIMPORT 1
@@ -27,7 +28,7 @@ int InitializeComponents(alt_up_sd_card_dev* sd_dev,
 		alt_up_character_lcd_dev * char_lcd_dev,
 		alt_up_pixel_buffer_dma_dev* pixel_buffer,
 		RenderObjectStructure *renderObjectStructure,
-		BlockObjectStructure *blockObjectStructure, Paddle* paddle) {
+		BlockObjectStructure *blockObjectStructure, Paddle* paddle, Ball *ball) {
 	int ret = 1;
 
 	// Open SDCard port
@@ -57,6 +58,7 @@ int InitializeComponents(alt_up_sd_card_dev* sd_dev,
 	InitializeRenderObjectStructure(renderObjectStructure);
 	InitializeBlockObjectStructure(blockObjectStructure, renderObjectStructure);
 	InitializePaddle(paddle);
+	InitializeBall(ball);
 
 	return ret;
 }
@@ -68,6 +70,9 @@ int main() {
 	RenderObjectStructure renderObjectStructure;
 	BlockObjectStructure blockObjectStructure;
 	Paddle paddle;
+	Ball ball;
+
+	unsigned int currentFrame = 0;
 
 	// Surpress the 'unused' warnings
 	(void) sd_dev;
@@ -79,34 +84,34 @@ int main() {
 	printf("Game Start!\n");
 
 	if (!InitializeComponents(sd_dev, char_lcd_dev, pixel_buffer,
-			&renderObjectStructure, &blockObjectStructure, &paddle)) {
+			&renderObjectStructure, &blockObjectStructure, &paddle, &ball)) {
 		printf("Error with initialization\n");
 		return 0;
 	}
 
 	// SAMPLE SUBROUTINE: Checkerboard
+	{
+		int i, j;
+		for (j = 0; (j + DEFAULT_BLOCK_HEIGHT) < NUM_RENDER_OBJECTS_HEIGHT;
+				j += 3 * DEFAULT_BLOCK_HEIGHT) {
+			for (i = 0;
+					(i + DEFAULT_BLOCK_WIDTH) < NUM_RENDER_OBJECTS_WIDTH;
+					i += 3 * DEFAULT_BLOCK_WIDTH) {
+				AddBlock(&blockObjectStructure, i, j, DEFAULT_BLOCK_WIDTH,
+						DEFAULT_BLOCK_HEIGHT, TripleHealth);
+			}
+		}
+	}
+
 	/*{
 	 int i, j;
-	 for (j = 0; (j + DEFAULT_BLOCK_HEIGHT - 1) < NUM_RENDER_OBJECTS_HEIGHT;
-	 j += 3) {
-	 for (i = 0;
-	 (i + DEFAULT_BLOCK_WIDTH - 1) < NUM_RENDER_OBJECTS_WIDTH;
-	 i += 4) {
+	 for (j = 5; (j + DEFAULT_BLOCK_HEIGHT - 1) < 10; j += 2) {
+	 for (i = 10; (i + DEFAULT_BLOCK_WIDTH - 1) < 20; i += 3) {
 	 AddBlock(&blockObjectStructure, i, j, DEFAULT_BLOCK_WIDTH,
 	 DEFAULT_BLOCK_HEIGHT, SingleHealth);
 	 }
 	 }
 	 }*/
-
-	{
-		int i, j;
-		for (j = 5; (j + DEFAULT_BLOCK_HEIGHT - 1) < 10; j += 2) {
-			for (i = 10; (i + DEFAULT_BLOCK_WIDTH - 1) < 20; i += 3) {
-				AddBlock(&blockObjectStructure, i, j, DEFAULT_BLOCK_WIDTH,
-						DEFAULT_BLOCK_HEIGHT, SingleHealth);
-			}
-		}
-	}
 
 	// Map the blocks that were just added
 	MapBlockObjectStructureToRender(&blockObjectStructure,
@@ -116,12 +121,12 @@ int main() {
 	// This only has to be done once
 	DrawRenderObjectStructure(&renderObjectStructure);
 
-#if PERFORM_EXPORTIMPORT
+#if 0 // DisabledPERFORM_EXPORTIMPORT
 	// ** PURELY TESTING OF IMPORT/EXPORT ** //
 	// This function exports the current block structure, and then reads it back in
 	{
 #define BUFFERLEN 500
-		unsigned char buffer[BUFFERLEN] = { 0 };
+		unsigned char buffer[BUFFERLEN] = {0};
 
 		// Export the block data structure
 		ExportBlockDataStructure(&renderObjectStructure, &blockObjectStructure,
@@ -137,10 +142,11 @@ int main() {
 #endif
 
 	// MAIN LOOP GOES HERE
+	while (1) {
+		MoveBall(&renderObjectStructure, &blockObjectStructure, &paddle, &ball,
+				currentFrame);
 
-	{
-		DrawBallObjectMovement(&blockObjectStructure, &renderObjectStructure,
-				&paddle);
+		currentFrame++;
 	}
 
 #if PERFORM_EXERCISES == 1

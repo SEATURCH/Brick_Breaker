@@ -156,4 +156,6 @@ int ImportBlockDataStructure(RenderObjectStructure *renderObjectStructure,
 	// Draw the set of blocks to screen
 	DrawRenderObjectStructure(renderObjectStructure);
 
+	return 1;
+
 }

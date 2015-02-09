@@ -19,10 +19,10 @@
 
 #define FALSE 							0
 #define TRUE 							1
-
 // Screen defines
 #define SCREEN_WIDTH					320
 #define SCREEN_HEIGHT					240
+#define SCREEN_TOTAL_PIXELS				((SCREEN_WIDTH)*(SCREEN_HEIGHT))
 
 #define SCREEN_HEIGHT_BLOCKAREA			160
 
@@ -34,13 +34,9 @@
 #define RENDER_TO_BALL_RATIO			2	// must be a whole number
 #define BALL_OBJECT_WIDTH				RENDER_OBJECT_WIDTH/RENDER_TO_BALL_RATIO
 #define BALL_OBJECT_HEIGHT				BALL_OBJECT_WIDTH 		// enforce it to be square
-#define BALL_SPEED						1 	// must be a whole number to move in straight line
-#define BLOCK_AREA_LIMIT				SCREEN_HEIGHT_BLOCKAREA - BALL_OBJECT_WIDTH
 
-#define BALL_COLOUR						0x001F
-
-#define X_LIMIT							SCREEN_WIDTH - BALL_OBJECT_WIDTH
-#define Y_LIMIT							SCREEN_HEIGHT - BALL_OBJECT_HEIGHT
+#define X_LIMIT							(SCREEN_WIDTH - BALL_OBJECT_WIDTH)
+#define Y_LIMIT							(SCREEN_HEIGHT - BALL_OBJECT_HEIGHT)
 
 #define NUM_RENDER_OBJECTS_WIDTH		((SCREEN_WIDTH) / (RENDER_OBJECT_WIDTH))
 #define NUM_RENDER_OBJECTS_HEIGHT		((SCREEN_HEIGHT_BLOCKAREA) / (RENDER_OBJECT_HEIGHT))
@@ -74,9 +70,9 @@ typedef struct RenderObjectStructure {
 // enum Value refers to color
 typedef enum BlockType {
 	Invisible = SCREEN_BACKGROUND_COLOR,
-	SingleHealth = DEFAULT_BLOCK_COLOR,
-	DoubleHealth = DEFAULT_BLOCK_COLOR, // REPLACE LATER
-	TripleHealth = DEFAULT_BLOCK_COLOR, // REPLACE LATER
+	SingleHealth = 0x8888,
+	DoubleHealth = 0xBBBB, // REPLACE LATER
+	TripleHealth = 0xFFFF, // REPLACE LATER
 	Unbreakable = 0x2329, // REPLACE LATER
 } BlockType;
 
@@ -105,6 +101,7 @@ typedef struct BlockObject {
 typedef struct BlockObjectStructure {
 	BlockObject blockObjects[DEFAULT_MAX_BLOCKS];
 	unsigned char numBlocksSet;
+	unsigned char numBlocksLeft; // Used for the remaining blocks
 } BlockObjectStructure;
 
 // Structure for the paddle
@@ -115,6 +112,22 @@ typedef struct Paddle {
 	int height;
 	int color;
 } Paddle;
+
+typedef struct Ball {
+	// Contain the current cartesian position of the ball
+	int x_pos;
+	int y_pos;
+
+	// Determines the frequency of frames in which to move 1 pixel
+	int x_frequency;
+	int y_frequency;
+
+	// Must be a value in the set of {-1, 1}
+	int x_dir;
+	int y_dir;
+
+	int color;
+} Ball;
 
 // Drawing
 void DrawBoxFPGA(int x1, int y1, int x2, int y2, int color);
@@ -134,7 +147,7 @@ void InitializePaddle(Paddle* paddle);
 // Methods
 void AddBlock(BlockObjectStructure * blockObjectStructure,
 		int renderObjectXStart, int renderObjectYStart, int blockWidth,
-		int blockHeight, int blockType);
+		int blockHeight, BlockType blockType);
 
 void MapBlockObjectStructureToRender(
 		BlockObjectStructure * blockObjectStructure,
@@ -144,6 +157,11 @@ void DrawBallObjectMovement(BlockObjectStructure *blockObjectStructure,
 void DrawFPGABallObject(int renderObjectStartX, int renderObjectStartY,
 		int color);
 void MovePaddle(Paddle* paddle, int paddleNextPosX);
+
+void EraseBall(Ball *ball);
+void DrawBall(Ball *ball);
+void HitBlockFromRenderObject(BlockObjectStructure *blockObjectStructure, RenderObjectStructure *renderObjectStructure, int renderObjectIndex);
+
 // Test funcs
 void SetRandomColors(RenderObjectStructure *renderObjectStructure);
 void SetBlack(RenderObjectStructure *renderObjectStructure);
@@ -152,23 +170,4 @@ void draw_diagonal_line_with_character();
 void EraseBlockAndResetRenderObjects(int blockCursor,
 		BlockObjectStructure * blockObjectStructure,
 		RenderObjectStructure *renderObjectStructure);
-int DetectCollision1(
-		int index, int oldCursorX, int oldCursorY, int cursorX, int cursorY, int offset,
-		RenderObjectStructure *renderObjectStructure,
-		BlockObjectStructure *blockObjectStructure);
-int DetectCollision2(
-		int index, int oldCursorX, int oldCursorY, int cursorX, int cursorY, int offset,
-		RenderObjectStructure *renderObjectStructure,
-		BlockObjectStructure *blockObjectStructure);
-int DetectCollision3(
-		int index, int oldCursorX, int oldCursorY, int cursorX, int cursorY, int offset,
-		RenderObjectStructure *renderObjectStructure,
-		BlockObjectStructure *blockObjectStructure);
-int DetectCollision4(
-		int index, int oldCursorX, int oldCursorY, int cursorX, int cursorY, int offset,
-		RenderObjectStructure *renderObjectStructure,
-		BlockObjectStructure *blockObjectStructure);
-int select_detect(int call_detect_num, int index, int oldCursorX, int oldCursorY, int cursorX, int cursorY, int offset,
-		RenderObjectStructure *renderObjectStructure,
-		BlockObjectStructure *blockObjectStructure);
 #endif /* VGA_GRAPHICS_H_ */
