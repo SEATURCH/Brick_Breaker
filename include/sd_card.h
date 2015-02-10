@@ -13,7 +13,7 @@
 #include "Altera_UP_SD_Card_Avalon_Interface.h"
 
 alt_up_sd_card_dev* initialize_sd_card();
-void sdwr(char* name);
+void sdwr(char* name, unsigned char* buffer);
 void sdrd();
-
+void readfile(char *name, unsigned char * buff);
 #endif /* SD_CARD_H_ */
