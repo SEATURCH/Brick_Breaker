@@ -71,7 +71,8 @@ int main() {
 	BlockObjectStructure blockObjectStructure;
 	Paddle paddle;
 	Ball ball;
-
+	int* spi_read;
+	spi_read = (int*) malloc(sizeof(int));
 	unsigned int currentFrame = 0;
 
 	// Surpress the 'unused' warnings
@@ -88,7 +89,7 @@ int main() {
 		printf("Error with initialization\n");
 		return 0;
 	}
-
+#if 1
 	// SAMPLE SUBROUTINE: Checkerboard
 	{
 		int i, j;
@@ -120,33 +121,38 @@ int main() {
 	// Draw the set of blocks to screen
 	// This only has to be done once
 	DrawRenderObjectStructure(&renderObjectStructure);
-
-#if 0 // DisabledPERFORM_EXPORTIMPORT
+#endif
+#if 0
+ // DisabledPERFORM_EXPORTIMPORT
 	// ** PURELY TESTING OF IMPORT/EXPORT ** //
 	// This function exports the current block structure, and then reads it back in
 	{
 #define BUFFERLEN 500
 		unsigned char buffer[BUFFERLEN] = {0};
-
+		unsigned char buffin[BUFFERLEN] = {0};
 		// Export the block data structure
 		ExportBlockDataStructure(&renderObjectStructure, &blockObjectStructure,
 				buffer, BUFFERLEN);
+		//sdwr("LVL1.bin", buffer);
 
+		lvlselect(char_lcd_dev, buffin);
 		// Import the just-exported block data structure
 		// This resets the render and block object structures and
 		// sets them to the previous set-up
 		ImportBlockDataStructure(&renderObjectStructure, &blockObjectStructure,
-				buffer, BUFFERLEN);
+				buffin, BUFFERLEN);
 
 	}
 #endif
 
 	// MAIN LOOP GOES HERE
 	while (1) {
+		MovePaddle(&paddle,paddleposition(spi_read));
 		MoveBall(&renderObjectStructure, &blockObjectStructure, &paddle, &ball,
 				currentFrame);
 
 		currentFrame++;
+
 	}
 
 #if PERFORM_EXERCISES == 1

@@ -24,11 +24,35 @@ architecture rtl of bit_flipper is
 	 signal saved_6: unsigned(31 downto 0);
 	 signal saved_7: unsigned(31 downto 0);
 	 signal saved_8: unsigned(31 downto 0);
-	 signal state: unsigned(2 downto 0):= "000";
+	 signal saved_9: unsigned(31 downto 0);
+	 signal saved_10: unsigned(31 downto 0);
+	 signal saved_11: unsigned(31 downto 0);
+	 signal saved_12: unsigned(31 downto 0);
+	 signal saved_13: unsigned(31 downto 0);
+	 signal saved_14: unsigned(31 downto 0);
+	 signal saved_15: unsigned(31 downto 0);
+	 signal saved_16: unsigned(31 downto 0);
+	 signal saved_17: unsigned(31 downto 0);
+	 signal saved_18: unsigned(31 downto 0);
+	 signal saved_19: unsigned(31 downto 0);
+	 signal saved_20: unsigned(31 downto 0);
+	 signal saved_21: unsigned(31 downto 0);
+	 signal saved_22: unsigned(31 downto 0);
+	 signal saved_23: unsigned(31 downto 0);
+	 signal saved_24: unsigned(31 downto 0);
+	 signal saved_25: unsigned(31 downto 0);
+	 signal saved_26: unsigned(31 downto 0);
+	 signal saved_27: unsigned(31 downto 0);
+	 signal saved_28: unsigned(31 downto 0);
+	 signal saved_29: unsigned(31 downto 0);
+	 signal saved_30: unsigned(31 downto 0);
+	 signal saved_31: unsigned(31 downto 0);
+	 signal saved_32: unsigned(31 downto 0);
+	 signal state: unsigned(4 downto 0):= "00000";
 begin
     
     --saved_value
-    process (clk,saved_value, saved_1, saved_2, saved_3, saved_4, saved_5, saved_6, saved_7, saved_8)
+    process (clk,saved_value, saved_1, saved_2, saved_3, saved_4, saved_5, saved_6, saved_7, saved_8, saved_9, saved_10, saved_11, saved_12, saved_13, saved_14, saved_15, saved_16, saved_17, saved_18, saved_19, saved_20, saved_21, saved_22, saved_23, saved_24, saved_25, saved_26, saved_27, saved_28, saved_29, saved_30, saved_31, saved_32)
 	 variable keep: unsigned(31 downto 0) := "00000000000000000000000111111111";
     begin
         if rising_edge(clk) then
@@ -42,22 +66,69 @@ begin
 						saved_4 <= "00000000000000000000000000000000";
 						saved_5 <= "00000000000000000000000000000000";
 						saved_6 <= "00000000000000000000000000000000";
-						saved_1 <= "00000000000000000000000000000000";
 						saved_7 <= "00000000000000000000000000000000";
 						saved_8 <= "00000000000000000000000000000000";
-						state <= "000";
+						saved_9 <= "00000000000000000000000000000000";
+						saved_10 <= "00000000000000000000000000000000";
+						saved_11 <= "00000000000000000000000000000000";
+						saved_12 <= "00000000000000000000000000000000";
+						saved_13 <= "00000000000000000000000000000000";
+						saved_14 <= "00000000000000000000000000000000";
+						saved_15 <= "00000000000000000000000000000000";
+						saved_16 <= "00000000000000000000000000000000";
+						saved_17 <= "00000000000000000000000000000000";
+						saved_18 <= "00000000000000000000000000000000";
+						saved_19 <= "00000000000000000000000000000000";
+						saved_20 <= "00000000000000000000000000000000";
+						saved_21 <= "00000000000000000000000000000000";
+						saved_22 <= "00000000000000000000000000000000";
+						saved_23 <= "00000000000000000000000000000000";
+						saved_24 <= "00000000000000000000000000000000";
+						saved_25 <= "00000000000000000000000000000000";
+						saved_26 <= "00000000000000000000000000000000";
+						saved_27 <= "00000000000000000000000000000000";
+						saved_28 <= "00000000000000000000000000000000";
+						saved_29 <= "00000000000000000000000000000000";
+						saved_30 <= "00000000000000000000000000000000";
+						saved_31 <= "00000000000000000000000000000000";
+						saved_32 <= "00000000000000000000000000000000";
+						state <= "00000";
             elsif (wr_en = '1' and addr = "01") then
 					case state is
-						when "000" => saved_1 <= unsigned(writedata);
-						when "001" => saved_2 <= unsigned(writedata);
-						when "010" => saved_3 <= unsigned(writedata);
-						when "011" => saved_4 <= unsigned(writedata);
-						when "100" => saved_5 <= unsigned(writedata);
-						when "101" => saved_6 <= unsigned(writedata);
-						when "110" => saved_7 <= unsigned(writedata);
-						when others => saved_8 <= unsigned(writedata);	
+						when "00000" => saved_1 <= unsigned(writedata);
+						when "00001" => saved_2 <= unsigned(writedata);
+						when "00010" => saved_3 <= unsigned(writedata);
+						when "00011" => saved_4 <= unsigned(writedata);
+						when "00100" => saved_5 <= unsigned(writedata);
+						when "00101" => saved_6 <= unsigned(writedata);
+						when "00110" => saved_7 <= unsigned(writedata);
+						when "00111" => saved_8 <= unsigned(writedata);
+						when "01000" => saved_9 <= unsigned(writedata);
+						when "01001" => saved_10 <= unsigned(writedata);
+						when "01010" => saved_11 <= unsigned(writedata);
+						when "01011" => saved_12 <= unsigned(writedata);
+						when "01100" => saved_13 <= unsigned(writedata);
+						when "01101" => saved_14 <= unsigned(writedata);
+						when "01110" => saved_15 <= unsigned(writedata);
+						when "01111" => saved_16 <= unsigned(writedata);
+						when "10000" => saved_17 <= unsigned(writedata);
+						when "10001" => saved_18 <= unsigned(writedata);
+						when "10010" => saved_19 <= unsigned(writedata);
+						when "10011" => saved_20 <= unsigned(writedata);
+						when "10100" => saved_21 <= unsigned(writedata);
+						when "10101" => saved_22 <= unsigned(writedata);
+						when "10110" => saved_23 <= unsigned(writedata);
+						when "10111" => saved_24 <= unsigned(writedata);
+						when "11000" => saved_25 <= unsigned(writedata);
+						when "11001" => saved_26 <= unsigned(writedata);
+						when "11010" => saved_27 <= unsigned(writedata);
+						when "11011" => saved_28 <= unsigned(writedata);
+						when "11100" => saved_29 <= unsigned(writedata);
+						when "11101" => saved_30 <= unsigned(writedata);
+						when "11110" => saved_31 <= unsigned(writedata);
+						when others => saved_32 <= unsigned(writedata);				
 					end case;
-						saved_value <= std_logic_vector( (saved_1+ saved_2+ saved_3+ saved_4+ saved_5+ saved_6+ saved_7+ saved_8) srl 3 );  
+						saved_value <= std_logic_vector( (saved_1+ saved_2+ saved_3+ saved_4+ saved_5+ saved_6+ saved_7+ saved_8 + saved_9+ saved_10+ saved_11+ saved_12+ saved_13+ saved_14+ saved_15+ saved_16+	saved_17+ saved_18+ saved_19+ saved_20+ saved_21+ saved_22+ saved_23+ saved_24 + saved_25+ saved_26+ saved_27+ saved_28+ saved_29+ saved_30+ saved_31+ saved_32) srl 5 );  
 						state <= state + 1;
 					--saved <= (saved sll 9);
 					--saved <= saved OR (keep AND unsigned(writedata(8 downto 0)));

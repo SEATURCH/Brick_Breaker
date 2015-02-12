@@ -89,13 +89,18 @@ int CheckTouchedRenderObjectsY(Set *touchedRenderObjects,
 	}
 	return renderObjectTouched;
 }
-int abs_diff(int paddle_middle, int ball_middle) {
+int abs_diff(int paddle_middle, int ball_middle, Ball* ball) {
 	int result = (paddle_middle - ball_middle);
-	if (result < 0)
+	if (result < 0){
 		result *= -1;
+		ball->x_dir = 1;
+	}else
+		ball->x_dir = -1;
 	return result;
 
 }
+int collision_m[7] = { BALL_SPEED_1, BALL_SPEED_2, BALL_SPEED_3, BALL_SPEED_4,
+		BALL_SPEED_5, BALL_SPEED_6, BALL_SPEED_7 };
 void CheckPaddleCollision(Paddle* paddle, Ball* ball, int* hitX, int* hitY,
 		int newX, int newY) {
 	// Check for Vertical collision with paddle
@@ -108,19 +113,10 @@ void CheckPaddleCollision(Paddle* paddle, Ball* ball, int* hitX, int* hitY,
 					int paddle_middle = (paddle->x_pos
 							+ DEFAULT_PADDLE_WIDTH / 2);
 					int ball_middle = newX + (BALL_OBJECT_WIDTH / 2);
-					if (abs_diff(paddle_middle,
-							ball_middle) < DEFAULT_PADDLE_ZERO_VEC) {
+					int abs_dist = abs_diff(paddle_middle, ball_middle, ball);
+					ball->x_frequency = collision_m[(abs_dist / 4)];
+					 printf("%d\n", collision_m[(abs_dist / 4)]);
 
-						ball->x_frequency = 0xFFFFFFFF;
-
-					} else {
-						ball->x_frequency = DEFAULT_BALL_FREQ_X;
-					}
-					/*right in center go straight up, divided into ranges where the each range hit will have a different spead
-					 * half the widt is 24
-					 *
-					 *
-					 */
 				}
 
 			} // Ball moving upwards
