@@ -14,5 +14,6 @@
 #include "IO.h"
 #include <system.h>
 #include "alt_types.h"
+#include "sys/alt_irq.h"
 
 #endif /* COMMON_H_ */

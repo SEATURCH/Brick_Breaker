@@ -13,6 +13,7 @@
 #define VGA_GRAPHICS_H_
 
 #include "../include/common.h"
+#include "../include/ir_sensor.h"
 #include "../include/memory_map.h"
 #include "altera_up_avalon_video_pixel_buffer_dma.h"
 #include "altera_up_avalon_video_character_buffer_with_dma.h"

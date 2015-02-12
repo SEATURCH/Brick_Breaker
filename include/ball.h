@@ -7,6 +7,7 @@
 
 #include "../include/set.h"
 #include "../include/vga_graphics.h"
+#include "../include/sound.h"
 #include <math.h>
 #define DEFAULT_BALL_POS_X				(SCREEN_WIDTH >> 1)
 #define DEFAULT_BALL_POS_Y				(SCREEN_HEIGHT >> 1)
@@ -16,6 +17,13 @@
 #define DEFUALT_BALL_DIR_Y				(-1)
 #define DEFAULT_BALL_COLOR				0xFFFF
 #define DEFAULT_PADDLE_ZERO_VEC			DEFAULT_PADDLE_WIDTH/4
+#define BALL_SPEED_1					18
+#define BALL_SPEED_2					15
+#define BALL_SPEED_3					12
+#define BALL_SPEED_4					9
+#define BALL_SPEED_5					7
+#define BALL_SPEED_6					5
+#define BALL_SPEED_7					2
 /*** MACROS ***/
 
 // Returns 1 if ball is supposed to be moving in currentFrame
@@ -56,6 +64,6 @@ int CheckTouchedRenderObjectsX(Set *touchedRenderObjects,
 		int numPoints);
 
 // Moves ball and triggers collisions with blocks
-void MoveBall(RenderObjectStructure *renderObjectStructure,
+int MoveBall(RenderObjectStructure *renderObjectStructure,
 		BlockObjectStructure *blockObjectStructure, Paddle* paddle, Ball* ball,
-		unsigned int currentFrame);
+		unsigned int currentFrame, MusicData* music_data);
