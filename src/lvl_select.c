@@ -1,9 +1,11 @@
 
 #include "../include/lvl_select.h"
 
+
+
 void lvlselect(alt_up_character_lcd_dev * char_lcd_dev, unsigned char* buffin){
 	int press, index=0;
-	sdrd();
+	lvlamount = sdrd();
 
 	char_lcd_dev = open_and_init_character_lcd("/dev/character_lcd_0");
 	alt_up_character_lcd_string(char_lcd_dev, "Level Select");
@@ -35,13 +37,13 @@ void lvlselect(alt_up_character_lcd_dev * char_lcd_dev, unsigned char* buffin){
 		case GO_DOWN :
 			press = 0;
 			if( (index=index-1) < 0 )
-					index = LVLAMOUNT-1;
+					index = lvlamount-1;
 			alt_up_character_lcd_set_cursor_pos(char_lcd_dev, 0, 1);
 			alt_up_character_lcd_string(char_lcd_dev, level[index]);
 			break;
 		case GO_UP:
 			press = 0;
-			index = (index+1)%LVLAMOUNT;
+			index = (index+1)%lvlamount;
 			alt_up_character_lcd_set_cursor_pos(char_lcd_dev, 0, 1);
 			alt_up_character_lcd_string(char_lcd_dev, level[index]);
 			break;
@@ -52,7 +54,7 @@ void lvlselect(alt_up_character_lcd_dev * char_lcd_dev, unsigned char* buffin){
 	if(press == DONE)
 		break;
 	}
-	printf("%s", level_map[index]);
-	readfile( level_map[index], buffin);
+	//printf("%s", level_map[index]);
+	readfile( index, buffin);
 
 }

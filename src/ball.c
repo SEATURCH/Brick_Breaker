@@ -5,7 +5,6 @@
  *      Author: Alan Larson
  */
 
-
 #include "../include/ball.h"
 
 void InitializeBall(Ball* ball) {
@@ -16,6 +15,7 @@ void InitializeBall(Ball* ball) {
 	ball->x_dir = DEFAULT_BALL_DIR_X;
 	ball->y_dir = DEFUALT_BALL_DIR_Y;
 	ball->color = DEFAULT_BALL_COLOR;
+
 }
 
 int CheckTouchedRenderObjectsX(Set *touchedRenderObjects,
@@ -89,7 +89,69 @@ int CheckTouchedRenderObjectsY(Set *touchedRenderObjects,
 	}
 	return renderObjectTouched;
 }
+int abs_diff(int paddle_middle, int ball_middle) {
+	int result = (paddle_middle - ball_middle);
+	if (result < 0)
+		result *= -1;
+	return result;
 
+}
+void CheckPaddleCollision(Paddle* paddle, Ball* ball, int* hitX, int* hitY,
+		int newX, int newY) {
+	// Check for Vertical collision with paddle
+	if ((newX + BALL_OBJECT_WIDTH) > paddle->x_pos) {
+		if (newX < (paddle->x_pos + DEFAULT_PADDLE_WIDTH)) {
+			// Ball moving downwards
+			if (ball->y_dir == 1) {
+				if (newY + BALL_OBJECT_HEIGHT == INITIAL_PADDLE_Y_POS) {
+					(*hitY)++;
+					int paddle_middle = (paddle->x_pos
+							+ DEFAULT_PADDLE_WIDTH / 2);
+					int ball_middle = newX + (BALL_OBJECT_WIDTH / 2);
+					if (abs_diff(paddle_middle,
+							ball_middle) < DEFAULT_PADDLE_ZERO_VEC) {
+
+						ball->x_frequency = 0xFFFFFFFF;
+
+					} else {
+						ball->x_frequency = DEFAULT_BALL_FREQ_X;
+					}
+					/*right in center go straight up, divided into ranges where the each range hit will have a different spead
+					 * half the widt is 24
+					 *
+					 *
+					 */
+				}
+
+			} // Ball moving upwards
+			else {
+				if (newY == (INITIAL_PADDLE_Y_POS + DEFAULT_PADDLE_HEIGHT)) {
+					(*hitY)++;
+				}
+			}
+		}
+
+	}
+
+	// Check for horizontal collison with paddle
+	if ((newY + BALL_OBJECT_HEIGHT) > INITIAL_PADDLE_Y_POS) {
+		if (newY < (INITIAL_PADDLE_Y_POS + DEFAULT_PADDLE_HEIGHT)) {
+			// Ball moving towards right
+			if ((ball->x_dir) == 1) {
+				if ((newX + BALL_OBJECT_WIDTH) == paddle->x_pos) {
+					(*hitX)++;
+				}
+			} // Ball moving towards left
+			else {
+				if (newX == (paddle->x_pos + DEFAULT_PADDLE_WIDTH)) {
+					(*hitX)++;
+				}
+			}
+		}
+
+	}
+
+}
 void MoveBall(RenderObjectStructure *renderObjectStructure,
 		BlockObjectStructure *blockObjectStructure, Paddle* paddle, Ball* ball,
 		unsigned int currentFrame) {
@@ -111,7 +173,7 @@ void MoveBall(RenderObjectStructure *renderObjectStructure,
 	int pointsTouchedY = 0;
 
 	int setCursor;
-
+	int paddle_posi;
 	// Clear the set, no objects have been hit
 	ClearSet(&touchedRenderObjects);
 
@@ -124,18 +186,20 @@ void MoveBall(RenderObjectStructure *renderObjectStructure,
 		return;
 
 	// Compute new positions
+	//paddle_posi = paddleposition(spi_read);
+
 	newX = ball->x_pos + (xMoving ? ball->x_dir : 0);
 	newY = ball->y_pos + (yMoving ? ball->y_dir : 0);
 
 	// Check for box collisions
-	if(xMoving) {
+	if (xMoving) {
 		pointsTouchedX = CheckTouchedRenderObjectsX(&touchedRenderObjects,
 				renderObjectStructure,
 				newX + ((ball->x_dir == 1) ? (BALL_OBJECT_WIDTH) : 0), // If ball moved right, check right side
 				newY,
 				BALL_OBJECT_HEIGHT + 1);
 	}
-	if(yMoving) {
+	if (yMoving) {
 		pointsTouchedY = CheckTouchedRenderObjectsY(&touchedRenderObjects,
 				renderObjectStructure, newX, // If ball moved right, check right side
 				newY + ((ball->y_dir == 1) ? (BALL_OBJECT_HEIGHT) : 0),
@@ -160,10 +224,16 @@ void MoveBall(RenderObjectStructure *renderObjectStructure,
 		hitX++;
 		printf("Wall hit X!\n");
 	}
+
 	if (CHECK_WALL_COLLISION_Y(newY)) {
 		hitY++;
 		printf("Wall hit Y!\n");
 	}
+
+	//Check for paddle collision
+	CheckPaddleCollision(paddle, ball, &hitX, &hitY, newX, newY);
+
+	//	Check paddle collision
 
 	// Erase the ball at its current position
 	EraseBall(ball);
@@ -195,6 +265,6 @@ void MoveBall(RenderObjectStructure *renderObjectStructure,
 
 	// Draw the ball at its new position
 	//
-	DrawBall(ball);
 
+	DrawBall(ball);
 }

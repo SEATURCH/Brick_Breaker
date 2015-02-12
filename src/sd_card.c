@@ -7,6 +7,8 @@
 
 #include "../include/sd_card.h"
 #define BUFFERLEN 500
+const char* level_map[10] = { 0 };
+int size = 0;
 alt_up_sd_card_dev* initialize_sd_card(){
 	return alt_up_sd_card_open_dev("/dev/SDCard");
 }
@@ -46,9 +48,10 @@ void sdwr(char* name, unsigned char *buff){
 
 }
 
-void sdrd(){
+int sdrd(){
+	int i, j=0;
 	short int sd_fileh;
-	char* bfile;
+	char bfile[8];
 		if( (alt_up_sd_card_is_Present()) ) {
 			printf("Card connected.\n");
 			if (alt_up_sd_card_is_FAT16()) {
@@ -65,19 +68,28 @@ void sdrd(){
 			  connected = 0;
 		 */
 			while( (sd_fileh = alt_up_sd_card_find_next(bfile)) == 0 ) {
-						// printf(bfile);
-						// printf("\n");
+				for(i =0; ((bfile[i]) != '.'); i++){
+					if( (bfile[i+1] =='.') && (bfile[i+2] == 'B')){
+						//printf(bfile);
+						level_map[j] =malloc(8);
+						strcpy(level_map[j], bfile);
+						j++;
+						break;
+					}
+				}
 			}
 		  } else{
 			  printf("SD CARD NOT CONNECTED");
 			  printf("\n");
 		  }
 
+		return j;
 }
 
-void readfile(char *name, unsigned char * buff){
+void readfile(int ind, unsigned char * buff){
 	short int sd_fileh;
 	char byte;
+	char *name =  level_map[ind];
 	 if(alt_up_sd_card_is_Present())
 		      {
 		          sd_fileh = alt_up_sd_card_fopen(name, false);
