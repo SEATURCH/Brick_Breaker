@@ -1,4 +1,4 @@
-/*
+﻿/*
  * vga_graphics.c
  *
  *  Created on: Jan 24, 2015
@@ -14,7 +14,7 @@
 
 // x - 9 bits
 // y - 8 bits
-void DrawBoxFPGA(int x1, int y1, int x2, int y2, int color) {
+void DrawBoxFPGA(int x1, int y1, int x2, int y2, int color, int borders) {
 	IOWR_32DIRECT(DRAWER_BASE, 0, x1);
 	// Set x1
 	IOWR_32DIRECT(DRAWER_BASE, 4, y1);
@@ -24,6 +24,7 @@ void DrawBoxFPGA(int x1, int y1, int x2, int y2, int color) {
 	IOWR_32DIRECT(DRAWER_BASE, 12, y2);
 	// Set y2
 	IOWR_32DIRECT(DRAWER_BASE, 16, color);
+	IOWR_32DIRECT(DRAWER_BASE, 24, borders);
 	// Set colour
 	IOWR_32DIRECT(DRAWER_BASE, 20, 1);
 	// Start drawing
@@ -41,7 +42,7 @@ void DrawFPGABallObject(int renderObjectStartX, int renderObjectStartY,
 
 	// Set colour
 	IOWR_32DIRECT(DRAWER_BASE, 16, color);
-
+	IOWR_32DIRECT(DRAWER_BASE, 24, WITHOUT_BORDERS);
 	// Start drawing
 	IOWR_32DIRECT(DRAWER_BASE, 20, 1);
 
@@ -52,7 +53,7 @@ void DrawFPGABallObject(int renderObjectStartX, int renderObjectStartY,
 
 void DrawFPGAPaddleObject(Paddle* paddle, int color) { //The color is added just so we can erase the paddle
 	DrawBoxFPGA(paddle->x_pos, paddle->y_pos, paddle->x_pos + paddle->width,
-			paddle->y_pos + paddle->height, color);
+			paddle->y_pos + paddle->height, color, WITHOUT_BORDERS);
 }
 
 void DrawFPGARenderObject(int renderObjectStartX, int renderObjectStartY,
@@ -231,11 +232,11 @@ void MovePaddle(Paddle* paddle, int paddleNextPosX) {
 
 void EraseBall(Ball *ball) {
 	DrawBoxFPGA(ball->x_pos, ball->y_pos, ball->x_pos + BALL_OBJECT_WIDTH,
-			ball->y_pos + BALL_OBJECT_HEIGHT, SCREEN_BACKGROUND_COLOR);
+			ball->y_pos + BALL_OBJECT_HEIGHT, SCREEN_BACKGROUND_COLOR, WITHOUT_BORDERS);
 }
 void DrawBall(Ball *ball) {
 	DrawBoxFPGA(ball->x_pos, ball->y_pos, ball->x_pos + BALL_OBJECT_WIDTH,
-			ball->y_pos + BALL_OBJECT_HEIGHT, ball->color);
+			ball->y_pos + BALL_OBJECT_HEIGHT, ball->color, WITHOUT_BORDERS);
 }
 
 void HitBlockFromRenderObject(BlockObjectStructure *blockObjectStructure,
@@ -277,12 +278,20 @@ void HitBlockFromRenderObject(BlockObjectStructure *blockObjectStructure,
 	}
 
 
-	// Draw new block
-	DrawBoxFPGA(blockObject->blockXStart * RENDER_OBJECT_WIDTH,
-			blockObject->blockYStart * RENDER_OBJECT_HEIGHT,
-			(blockObject->blockXStart + blockObject->blockWidthRenderObjects) * RENDER_OBJECT_WIDTH - 1,
-			(blockObject->blockYStart + blockObject->blockHeightRenderObjects) * RENDER_OBJECT_HEIGHT - 1,
-			blockObject->blockType);
+	if(blockObject->blockType == Invisible) {
+		// Draw new block
+		DrawBoxFPGA(blockObject->blockXStart * RENDER_OBJECT_WIDTH,
+				blockObject->blockYStart * RENDER_OBJECT_HEIGHT,
+				(blockObject->blockXStart + blockObject->blockWidthRenderObjects) * RENDER_OBJECT_WIDTH - 1,
+				(blockObject->blockYStart + blockObject->blockHeightRenderObjects) * RENDER_OBJECT_HEIGHT - 1,
+				blockObject->blockType, WITHOUT_BORDERS);
+	} else {
+		DrawBoxFPGA(blockObject->blockXStart * RENDER_OBJECT_WIDTH,
+				blockObject->blockYStart * RENDER_OBJECT_HEIGHT,
+				(blockObject->blockXStart + blockObject->blockWidthRenderObjects) * RENDER_OBJECT_WIDTH - 1,
+				(blockObject->blockYStart + blockObject->blockHeightRenderObjects) * RENDER_OBJECT_HEIGHT - 1,
+				blockObject->blockType, WITH_BORDERS);
+	}
 
 
 }
@@ -362,7 +371,7 @@ void draw_random_boxes_forever() {
 		// Draw random values
 
 		if (hw) {
-			DrawBoxFPGA(x1, y1, x2, y2, color);
+			DrawBoxFPGA(x1, y1, x2, y2, color, WITHOUT_BORDERS);
 		} else {
 			alt_up_pixel_buffer_dma_draw_box(pixel_buffer, x1, y1, x2, y2,
 					color, 0);

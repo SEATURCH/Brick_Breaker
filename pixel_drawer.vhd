@@ -28,7 +28,9 @@ architecture rtl of pixel_drawer is
     signal y1,y2 : std_logic_vector(7 downto 0);
     signal colour : std_logic_vector(15 downto 0);	 
     signal done : std_logic := '0';
-	 
+	 --signal block_width : unsigned(4 downto 0) := "01100"; --24 for now, which is 8x3
+	 --signal block_height : unsigned(4 downto 0) := "01000"; --16 for now, which is 8x2
+	 signal should_have_border : std_logic;
 --	 constant pixel_buffer_base : std_logic_vector(31 downto 0) :=  x"00080000";
 	 
 begin
@@ -40,22 +42,25 @@ begin
     -- have separated these into two processes.
 
     process(clk, reset_n)
-    variable processing : bit := '0';  -- Used to indicate whether we are drawing
-    variable state : integer;          -- Current state.  We could use enumerated types.
+		 variable processing : bit := '0';  -- Used to indicate whether we are drawing
+		 variable state : integer;          -- Current state.  We could use enumerated types.
 
-    -- The following are local copies of the coordinates and colour.  When the user
-    -- starts a drawing operation, we immediately copy the coordinates here, so that
-    -- if the user tries to change the coordinates while the draw operation is running,
-    -- the draw operation completes with the old value of the coordinates.  This is
-    -- not strictly required, but perhaps provides a more “natural” operation for
-    -- whoever is writing the C code.
+		 -- The following are local copies of the coordinates and colour.  When the user
+		 -- starts a drawing operation, we immediately copy the coordinates here, so that
+		 -- if the user tries to change the coordinates while the draw operation is running,
+		 -- the draw operation completes with the old value of the coordinates.  This is
+		 -- not strictly required, but perhaps provides a more “natural” operation for
+		 -- whoever is writing the C code.
 
-    variable x1_local,x2_local : std_logic_vector(8 downto 0);
-    variable y1_local,y2_local : std_logic_vector(7 downto 0);
-    variable colour_local : std_logic_vector(15 downto 0);	 
+		 variable x1_local,x2_local : std_logic_vector(8 downto 0);
+		 variable y1_local,y2_local : std_logic_vector(7 downto 0);
+		 variable colour_local : std_logic_vector(15 downto 0);	 
 
-    -- This is used to remember the left-most x point as we draw the box.
-    variable savedx : std_logic_vector(8 downto 0);
+		 -- This is used to remember the left-most x point as we draw the box.
+		 variable savedx_begin : std_logic_vector(8 downto 0);
+		 variable savedx_end : std_logic_vector(8 downto 0);
+		 variable savedy_begin : std_logic_vector(7 downto 0);
+		 variable savedy_end : std_logic_vector(7 downto 0);
 	 
     begin
        if (reset_n = '0') then
@@ -64,6 +69,8 @@ begin
           processing := '0';
           state := 0;
           done <= '0';
+			 --block_width <= "01100";
+			 --block_height <= "01000";
 
         elsif rising_edge(clk) then
 
@@ -83,7 +90,15 @@ begin
 --						                   unsigned( y1_local & x1_local & '0'));		  				   	          
                   master_addr <= std_logic_vector(unsigned(pixel_buffer_base) +
  						                   unsigned( y1_local & x1_local & '0'));	
-                  master_writedata <= colour_local;
+						if(should_have_border = '1') then
+							if (y1_local = savedy_begin OR y1_local = savedy_end OR x1_local = savedx_begin OR x1_local = savedx_end) then	
+								master_writedata <= "1111111111111111";
+							else
+								master_writedata <= colour_local;
+							end if;
+						else 
+							master_writedata <= colour_local;
+						end if;
                   master_be <= "11";  -- byte enable
                   master_wr_en <= '1';
                   master_rd_en <= '0';
@@ -100,7 +115,7 @@ begin
                         done <= '1';   -- box is done
                         processing := '0';
                      else
-                        x1_local := savedx;
+                        x1_local := savedx_begin;
                         y1_local := std_logic_vector(unsigned(y1_local)+1);								 
                      end if;
                   else 
@@ -126,9 +141,6 @@ begin
                     -- If the user tries to write to offset 5, we are to start drawing
                     when "101" =>
                        if processing = '0' then
-                          processing := '1';  -- start drawing on next rising clk edge
-                          state := 0;
-                          done <= '0';
 
                           -- The above drawing code assumes x1<x2 and y1<y2, however the
                           -- user may give us points with x1>x2 or y1>y2.  If so, swap
@@ -136,29 +148,39 @@ begin
                           -- variables.  This ensures that if the user changes a coordinate
                           -- while a drawing is occurring, it continues to draw the box
                           -- as originally requested.
-
-                          if (x1 < x2) then
-                             x1_local := x1;
-                             savedx := x1;
-                             x2_local := x2;
-                          else
-                             x2_local := x1;
-                             savedx := x2;
-                             x1_local := x2;
-                          end if;
-								
-                          if (y1 < y2) then
-                             y1_local := y1;
-                             y2_local := y2;
-                          else
-                             y2_local := y1;
-                             y1_local := y2;
-                          end if;									
-
+								  if (unsigned(x1) < unsigned(x2)) then
+									  x1_local := x1;
+									  savedx_begin := x1;
+									  x2_local := x2;
+									  savedx_end := x2;
+								  else 
+									  x1_local := x2;
+									  savedx_begin := x2;
+									  x2_local := x1;
+									  savedx_end := x2;
+								  end if;
+								  
+								  if(unsigned(y1) < unsigned(y2)) then
+									  y1_local := y1;
+									  savedy_begin := y1;
+									  y2_local := y2;
+									  savedy_end := y2_local;
+								  else
+									  y1_local := y2;
+									  savedy_begin := y2;
+									  y2_local := y1;
+									  savedy_end := y1_local;
+								  end if;
                           colour_local := colour;
+								  if (unsigned(x2_local) < 320 and unsigned(y2_local) < 240) then
+										processing := '1';
+										done <= '0';
+										state := 0;
+								  end if;
                         end if;
 		
-                   when others => null;
+                   when "110" => should_have_border <= slave_writedata(0);
+						 when others => null;
                 end case;
             end if;
          end if;
@@ -180,6 +202,7 @@ begin
               when "011" => slave_readdata <= "000000000000000000000000" & y2;
               when "100" => slave_readdata <= "0000000000000000" & colour;
               when "101" => slave_readdata <= (0=>done, others=>'0');
+				  when "110" => slave_readdata <= (0=>should_have_border, others=> '0');
               when others => null;
             end case;
          end if;

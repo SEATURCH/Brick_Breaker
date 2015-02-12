@@ -18,6 +18,7 @@
 #include "altera_up_avalon_video_pixel_buffer_dma.h"
 #include "altera_up_avalon_video_character_buffer_with_dma.h"
 
+
 #define FALSE 							0
 #define TRUE 							1
 // Screen defines
@@ -58,6 +59,9 @@
 #define INITIAL_PADDLE_X_POS			((SCREEN_WIDTH >> 1) - DEFAULT_PADDLE_WIDTH)
 #define DEFAULT_PADDLE_COLOR			0x0F0F
 
+//Drawing boxes with/without borders
+#define WITHOUT_BORDERS 0
+#define WITH_BORDERS 1
 // Structures
 
 typedef struct RenderObjectStructure {
@@ -131,7 +135,7 @@ typedef struct Ball {
 } Ball;
 
 // Drawing
-void DrawBoxFPGA(int x1, int y1, int x2, int y2, int color);
+void DrawBoxFPGA(int x1, int y1, int x2, int y2, int color, int borders);
 void DrawFPGARenderObject(int renderObjectStartX, int renderObjectStartY,
 		int color);
 void DrawRenderObjectStructure(RenderObjectStructure *renderObjectStructure);
