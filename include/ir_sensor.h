@@ -21,7 +21,7 @@
 //Data stored in spi_read. Data range is 125 at 5.04V, 41 at 1.65V, ranging down to 0
 //Takes a pointer that will then hold the returned value
 //Sensor ranges at Data range is 71 at 3.13V, 21 at 1.09V
-int paddleposition(int *spi_read);
+int paddleposition(char *spi_read);
 
 
 #endif /* IR_SENSOR_H_ */

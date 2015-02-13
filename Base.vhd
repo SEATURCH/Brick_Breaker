@@ -8,6 +8,7 @@ ENTITY Base IS
 		SW : IN STD_LOGIC_VECTOR(17 DOWNTO 0);
 		KEY : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
 		CLOCK_50 : IN STD_LOGIC;
+		CLOCK_27 : IN STD_LOGIC;
 		LEDG : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
 		DRAM_CLK, DRAM_CKE : OUT STD_LOGIC;
 		DRAM_ADDR : OUT STD_LOGIC_VECTOR(11 DOWNTO 0);
@@ -24,6 +25,10 @@ ENTITY Base IS
 		SRAM_DQ : inout std_logic_vector(15 downto 0);
 		SRAM_ADDR : out std_logic_vector(17 downto 0);
 		SRAM_LB_N, SRAM_UB_N, SRAM_CE_N, SRAM_OE_N, SRAM_WE_N : out std_logic;
+		I2C_SDAT : inout std_logic;
+		I2C_SCLK : out std_logic;
+		AUD_XCK, AUD_DACDAT : out std_logic;
+		AUD_ADCDAT, AUD_ADCLRCK, AUD_BCLK, AUD_DACLRCK : in std_logic;
 		GPIO_1: inout std_LOGIC_vector(36 downto 0)
 	);
 END Base;
@@ -72,10 +77,19 @@ ARCHITECTURE Structure OF Base IS
 			vga_controller_R     : out   std_logic_vector(9 downto 0);                     
 			vga_controller_G     : out   std_logic_vector(9 downto 0);                     
 			vga_controller_B     : out   std_logic_vector(9 downto 0);
-			spi_MISO : IN std_LOGIC;
-			spi_MOSI: out std_LOGIC;
-			spi_SCLK : out std_LOGIC;
-			spi_SS_n: out std_LOGIC			
+			spi_MISO 				: IN std_LOGIC;
+			spi_MOSI					: out std_LOGIC;
+			spi_SCLK 				: out std_LOGIC;
+			spi_SS_n					: out std_LOGIC;
+			audio_ADCDAT            : in    std_logic                     := 'X';             
+			audio_ADCLRCK           : in    std_logic                     := 'X';            
+			audio_BCLK              : in    std_logic                     := 'X';             
+			audio_DACDAT            : out   std_logic;                                        
+			audio_DACLRCK           : in    std_logic                     := 'X';             
+			audio_video_config_SDAT : inout std_logic                     := 'X';             
+			audio_video_config_SCLK : out   std_logic;                                       
+			clocks_secondary_clk    : in    std_logic                     := 'X';             
+			audio_clk_clk           : out   std_logic                                         
 		);
 	END COMPONENT;
 	SIGNAL DQM : STD_LOGIC_VECTOR(1 DOWNTO 0);
@@ -130,6 +144,15 @@ BEGIN
 		spi_MISO => GPIO_1(0),
 		spi_MOSI => GPIO_1(1),
 		spi_SS_n => GPIO_1(2),
-		spi_SCLK => GPIO_1(4)      
+		spi_SCLK => GPIO_1(4),
+		audio_ADCDAT            => AUD_ADCDAT,           
+		audio_ADCLRCK           => AUD_ADCLRCK,         
+		audio_BCLK              => AUD_BCLK,           
+		audio_DACDAT            => AUD_DACDAT,         
+		audio_DACLRCK           => AUD_DACLRCK,        
+		audio_video_config_SDAT => I2C_SDAT,
+		audio_video_config_SCLK => I2C_SCLK,
+		clocks_secondary_clk    => CLOCK_27,  
+		audio_clk_clk           => AUD_XCK           
 	);
 END Structure;

@@ -91,10 +91,10 @@ int CheckTouchedRenderObjectsY(Set *touchedRenderObjects,
 }
 int abs_diff(int paddle_middle, int ball_middle, Ball* ball) {
 	int result = (paddle_middle - ball_middle);
-	if (result < 0){
+	if (result < 0) {
 		result *= -1;
 		ball->x_dir = 1;
-	}else
+	} else
 		ball->x_dir = -1;
 	return result;
 
@@ -115,7 +115,7 @@ void CheckPaddleCollision(Paddle* paddle, Ball* ball, int* hitX, int* hitY,
 					int ball_middle = newX + (BALL_OBJECT_WIDTH / 2);
 					int abs_dist = abs_diff(paddle_middle, ball_middle, ball);
 					ball->x_frequency = collision_m[(abs_dist / 4)];
-					 printf("%d\n", collision_m[(abs_dist / 4)]);
+					printf("%d\n", collision_m[(abs_dist / 4)]);
 
 				}
 
@@ -148,9 +148,9 @@ void CheckPaddleCollision(Paddle* paddle, Ball* ball, int* hitX, int* hitY,
 	}
 
 }
-void MoveBall(RenderObjectStructure *renderObjectStructure,
+int MoveBall(RenderObjectStructure *renderObjectStructure,
 		BlockObjectStructure *blockObjectStructure, Paddle* paddle, Ball* ball,
-		unsigned int currentFrame) {
+		unsigned int currentFrame, MusicData* blockHitSound) {
 
 	// Set will contain the index all the touched render objects
 	Set touchedRenderObjects;
@@ -179,7 +179,7 @@ void MoveBall(RenderObjectStructure *renderObjectStructure,
 
 	// Ball hasn't moved, return from the function
 	if (!xMoving && !yMoving)
-		return;
+		return 1;
 
 	// Compute new positions
 	//paddle_posi = paddleposition(spi_read);
@@ -206,24 +206,32 @@ void MoveBall(RenderObjectStructure *renderObjectStructure,
 		hitX++;
 		hitY++;
 		printf("Block Corner hit!\n");
+		play_sound(blockHitSound);
 
 	} else if (pointsTouchedY < pointsTouchedX) {
 		hitX++;
 		printf("Block X hit!\n");
+		play_sound(blockHitSound);
 	} else if (pointsTouchedY > pointsTouchedX) {
 		hitY++;
 		printf("Block Y hit!\n");
+		play_sound(blockHitSound);
 	}
 
 	// Check for wall collisions
 	if (CHECK_WALL_COLLISION_X(newX)) {
 		hitX++;
 		printf("Wall hit X!\n");
+		play_sound(blockHitSound);
 	}
 
-	if (CHECK_WALL_COLLISION_Y(newY)) {
+	if (CHECK_BOTTOM_WALL(newY)) {
+		hitY++;
+		//return 0;
+	} else if (CHECK_TOP_WALL(newY)) {
 		hitY++;
 		printf("Wall hit Y!\n");
+		play_sound(blockHitSound);
 	}
 
 	//Check for paddle collision
@@ -263,4 +271,5 @@ void MoveBall(RenderObjectStructure *renderObjectStructure,
 	//
 
 	DrawBall(ball);
+	return 1;
 }
