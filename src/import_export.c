@@ -108,6 +108,20 @@ int ExportBlockDataStructure(RenderObjectStructure *renderObjectStructure,
 	return 1;
 }
 
+BlockType determineBlockType( unsigned short inputColor){
+	switch (inputColor){
+	case (int)SingleHealth:
+		return SingleHealth;
+	case (int)DoubleHealth:
+		return DoubleHealth;
+	case (int)TripleHealth:
+			return TripleHealth;
+	case (int)Unbreakable:
+				return Unbreakable;
+	}
+	return Invisible;
+}
+
 int ImportBlockDataStructure(RenderObjectStructure *renderObjectStructure,
 		BlockObjectStructure *blockObjectStructure, unsigned char *inputBuffer,
 		unsigned int inputBufferLen) {
@@ -135,17 +149,18 @@ int ImportBlockDataStructure(RenderObjectStructure *renderObjectStructure,
 	for (blockCursor = 0; blockCursor < numBlocks; blockCursor++) {
 		unsigned char posX, posY, width, height;
 		short color;
-
+		BlockType color2;
 		posX = inputBuffer[bufferCursor++];
 		posY = inputBuffer[bufferCursor++];
 		width = GET4BIT_LOWER(inputBuffer[bufferCursor]); // Don't increment, height is in the same index
 		height = GET4BIT_UPPER(inputBuffer[bufferCursor++]);
 		color =
 				COMBINE_BYTES_INTO_WORD(inputBuffer[bufferCursor], inputBuffer[bufferCursor + 1]);
+		color2 = determineBlockType(color);
 		bufferCursor++;
 		bufferCursor++;
 
-		AddBlock(blockObjectStructure, posX, posY, width, height, color);
+		AddBlock(blockObjectStructure, posX, posY, width, height, color2);
 
 	}
 
@@ -159,3 +174,4 @@ int ImportBlockDataStructure(RenderObjectStructure *renderObjectStructure,
 	return 1;
 
 }
+
