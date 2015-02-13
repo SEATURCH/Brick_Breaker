@@ -12,6 +12,7 @@
 int ClearSet(Set *set)
 {
 	set->numValues = 0;
+	return 0;
 }
 
 

@@ -62,7 +62,8 @@ int InitializeComponents(alt_up_sd_card_dev* sd_dev,
 	InitializePaddle(paddle);
 	InitializeBall(ball);
 
-	if(read_wav_file(BLOCK_HIT_SOUND_FILENAME,blockHitSound) == READ_WAV_FILE_ERROR) {
+	if (read_wav_file(BLOCK_HIT_SOUND_FILENAME,
+			blockHitSound) == READ_WAV_FILE_ERROR) {
 		printf("Could not read the wav file for block hit sound properly\n");
 		ret = 0;
 	}
@@ -73,8 +74,7 @@ int InitializeComponents(alt_up_sd_card_dev* sd_dev,
 /*
  * ISR Routine for reading the sound, given a context of ISRparams.
  */
-static void sound_buffer_isr (void* context, alt_u32 id)
-{
+static void sound_buffer_isr(void* context, alt_u32 id) {
 	MusicData* blockHitSound;
 	unsigned int *sound_buf;
 	alt_up_audio_dev* audio_handler;
@@ -82,10 +82,10 @@ static void sound_buffer_isr (void* context, alt_u32 id)
 	//Clear the TO bit, aka reset the counter
 	IOWR_ALTERA_AVALON_TIMER_STATUS(TIMER_BASE, 0);
 
-	blockHitSound = ((ISRparams*)context)->music;
-	sound_buf = ((ISRparams*)context)->sound_buf;
-	audio_handler = ((ISRparams*)context)->audio_handler;
-	fill_audio_channels(sound_buf,blockHitSound,audio_handler);
+	blockHitSound = ((ISRparams*) context)->music;
+	sound_buf = ((ISRparams*) context)->sound_buf;
+	audio_handler = ((ISRparams*) context)->audio_handler;
+	fill_audio_channels(sound_buf, blockHitSound, audio_handler);
 
 }
 
@@ -94,7 +94,8 @@ static void sound_buffer_isr (void* context, alt_u32 id)
  * ISRparams is a parameter, because we initialize it in the stack of the main() function. Another method would be to malloc it
  * inside this function.
  */
-void InitializeISR(MusicData* music_data, unsigned int sound_buf[], alt_up_audio_dev* audio_handler, ISRparams* isr_params) {
+void InitializeISR(MusicData* music_data, unsigned int sound_buf[],
+		alt_up_audio_dev* audio_handler, ISRparams* isr_params) {
 	(isr_params)->music = music_data;
 	(isr_params)->sound_buf = sound_buf;
 	(isr_params)->audio_handler = audio_handler;
@@ -112,6 +113,10 @@ void InitializeISR(MusicData* music_data, unsigned int sound_buf[], alt_up_audio
 	IOWR_ALTERA_AVALON_TIMER_CONTROL(TIMER_BASE, 0x0007);
 }
 
+#define CLOCKSPEED 						(50000000)
+#define MODIFIER						(1450)
+#define MIN_TOTAL_CYCLES_PER_FRAME 		((CLOCKSPEED) / (MODIFIER))
+
 int main() {
 	alt_up_sd_card_dev* sd_dev;
 	alt_up_character_lcd_dev * char_lcd_dev;
@@ -119,17 +124,35 @@ int main() {
 	alt_up_audio_dev* audio_handler;
 	RenderObjectStructure renderObjectStructure;
 	BlockObjectStructure blockObjectStructure;
+	alt_up_char_buffer_dev *char_buffer;
 	MusicData blockHitSound;
 	ISRparams isr_params;
 	Paddle paddle;
+
 	Ball ball;
-	int ballAlive = 1;
+	// Holds all the balls
+	BallObjectStructure ballObjectStructure;
+
+ 	char* game[] = { "G1.bin", "G2.bin", "G3.bin", "G4.bin", "G5.bin",
+					"G6.bin", "G7.bin", "G8.bin", "G9.bin", "G10.bin" };
+
 
 	char spi_read;
 	//spi_read = (int*) malloc(sizeof(int));
-	unsigned int currentFrame = 0;
-	unsigned int sound_buf [MAX_BUFFER_SIZE];
 
+	//Main Loop Variables
+	unsigned char switchnow = 0;
+	unsigned char switchlast = 0;
+	int ballAlive = MAX_BALLS;
+	int numBallAlive = 1;
+	int ballCount = 0;
+	unsigned int currentFrame = 0;
+
+
+	unsigned int sound_buf[MAX_BUFFER_SIZE];
+	 alt_u32 start_time;
+	 alt_u32 end_time;
+	 const alt_u32 total_wait_time = MIN_TOTAL_CYCLES_PER_FRAME;
 	// Surpress the 'unused' warnings
 	(void) sd_dev;
 	(void) char_lcd_dev;
@@ -140,88 +163,190 @@ int main() {
 
 	printf("Game Start!\n");
 
-	if (!InitializeComponents(sd_dev, char_lcd_dev, pixel_buffer,
-			&renderObjectStructure, &blockObjectStructure, &paddle, &ball, &blockHitSound)) {
-		printf("Error with initialization\n");
-		return 0;
-	}
-	// Open video audio config
-	av_config_setup();
-	// Open Audio port
-	audio_handler = alt_up_audio_open_dev(AUDIO_NAME);
-	if (audio_handler == NULL) {
-		printf("Audio core could not be opened. \n");
-	}
+	int restart = 0, num, level = 0, loadNewGame = -1, loadSavedGame = -1,
+			savedgame = -1, backtomain = -1, game_index = -1;
+	while (1) {
+		InitializeBallObjectStructure(&ballObjectStructure);
+		ballAlive = MAX_BALLS;
+		ballCount = 0;
+		restart = 0, num, level = 0, loadNewGame = -1, loadSavedGame = -1, savedgame =
+				-1, backtomain = -1;
+		if (!InitializeComponents(sd_dev, char_lcd_dev, pixel_buffer,
+				&renderObjectStructure, &blockObjectStructure, &paddle, &ball,
+				&blockHitSound)) {
+			printf("Error with initialization\n");
+			return 0;
+		}
 
-	InitializeISR(&blockHitSound,sound_buf,audio_handler,&isr_params);
-#if 1
-	// SAMPLE SUBROUTINE: Checkerboard
-	{
-		int i, j;
-		for (j = 0; (j + DEFAULT_BLOCK_HEIGHT) < NUM_RENDER_OBJECTS_HEIGHT;
-				j += 3 * DEFAULT_BLOCK_HEIGHT) {
-			for (i = 0;
-					(i + DEFAULT_BLOCK_WIDTH) < NUM_RENDER_OBJECTS_WIDTH;
-					i += 3 * DEFAULT_BLOCK_WIDTH) {
-				AddBlock(&blockObjectStructure, i, j, DEFAULT_BLOCK_WIDTH,
-						DEFAULT_BLOCK_HEIGHT, TripleHealth);
+		DrawRenderObjectStructure(&renderObjectStructure);
+		
+		 // Open video audio config
+		 av_config_setup();
+		 // Open Audio port
+		 audio_handler = alt_up_audio_open_dev(AUDIO_NAME);
+		 if (audio_handler == NULL) {
+		 printf("Audio core could not be opened. \n");
+		 }
+
+
+		 InitializeISR(&blockHitSound,sound_buf,audio_handler,&isr_params);
+		while (loadSavedGame == -1 && loadNewGame == -1 && backtomain == -1) {
+			num = DrawStartMenu(restart);
+			switch (num) {
+			case 0:
+				level = DrawLevelMenu();
+				if (level == (TOTAL_MENU_OPTIONS - 1))
+					loadNewGame = -1;
+				else {
+					LoadNewGame(&renderObjectStructure, &blockObjectStructure,
+							level);
+					loadNewGame = 1;
+				}
+				break;
+			case 1:
+				loadSavedGame = DrawSavedGameMenu();
+				if (loadSavedGame == (TOTAL_MENU_OPTIONS - 1))
+					loadSavedGame = -1;
+				break;
+			default:
+				backtomain = 1;
+				break;
 			}
 		}
-	}
+		//DrawRenderObjectStructure(&renderObjectStructure);
+		if (loadSavedGame != -1) {
+			unsigned char buffin[BUFFERLEN] = { 0 };
+			readfile(loadSavedGame, buffin);
+			ImportBlockDataStructure(&renderObjectStructure,
+					&blockObjectStructure, buffin, BUFFERLEN);
+		} else if (loadNewGame == 1) {
+			// Map the blocks that were just added
+			MapBlockObjectStructureToRender(&blockObjectStructure,
+					&renderObjectStructure);
 
-	/*{
-	 int i, j;
-	 for (j = 5; (j + DEFAULT_BLOCK_HEIGHT - 1) < 10; j += 2) {
-	 for (i = 10; (i + DEFAULT_BLOCK_WIDTH - 1) < 20; i += 3) {
-	 AddBlock(&blockObjectStructure, i, j, DEFAULT_BLOCK_WIDTH,
-	 DEFAULT_BLOCK_HEIGHT, SingleHealth);
-	 }
-	 }
-	 }*/
-
-	// Map the blocks that were just added
-	MapBlockObjectStructureToRender(&blockObjectStructure,
-			&renderObjectStructure);
-
-	// Draw the set of blocks to screen
-	// This only has to be done once
-	DrawRenderObjectStructure(&renderObjectStructure);
-#endif
+			// Draw the set of blocks to screen
+			// This only has to be done once
+			//DrawRenderObjectStructure(&renderObjectStructure);
+		} else if (backtomain == 1) {
+			continue;
+		} else if (loadNewGame == -1)
+			return 0;
 #if 0
- // DisabledPERFORM_EXPORTIMPORT
-	// ** PURELY TESTING OF IMPORT/EXPORT ** //
-	// This function exports the current block structure, and then reads it back in
-	{
+		// DisabledPERFORM_EXPORTIMPORT
+		// ** PURELY TESTING OF IMPORT/EXPORT ** //
+		// This function exports the current block structure, and then reads it back in
+		{
 #define BUFFERLEN 500
-		unsigned char buffer[BUFFERLEN] = {0};
-		unsigned char buffin[BUFFERLEN] = {0};
-		// Export the block data structure
-		ExportBlockDataStructure(&renderObjectStructure, &blockObjectStructure,
-				buffer, BUFFERLEN);
-		//sdwr("LVL1.bin", buffer);
+			unsigned char buffer[BUFFERLEN] = {0};
+			unsigned char buffin[BUFFERLEN] = {0};
+			// Export the block data structure
+			ExportBlockDataStructure(&renderObjectStructure, &blockObjectStructure,
+					buffer, BUFFERLEN);
+			//sdwr("LVL1.bin", buffer);
 
-		lvlselect(char_lcd_dev, buffin);
-		// Import the just-exported block data structure
-		// This resets the render and block object structures and
-		// sets them to the previous set-up
-		ImportBlockDataStructure(&renderObjectStructure, &blockObjectStructure,
-				buffin, BUFFERLEN);
+			lvlselect(char_lcd_dev, buffin);
+			// Import the just-exported block data structure
+			// This resets the render and block object structures and
+			// sets them to the previous set-up
+			ImportBlockDataStructure(&renderObjectStructure, &blockObjectStructure,
+					buffin, BUFFERLEN);
 
-	}
+		}
 #endif
+		savedgame = -1;
+		// MAIN LOOP GOES HERE
 
-	// MAIN LOOP GOES HERE
-	ballAlive = 1;
-	while (1) {
-		// int position = paddleposition(&spi_read);
-		// printf("%d\n", position);
-		MovePaddle(&paddle, paddleposition(&spi_read));
-		ballAlive = MoveBall(&renderObjectStructure, &blockObjectStructure, &paddle, &ball,
-				currentFrame,&blockHitSound);
+		char_buffer = alt_up_char_buffer_open_dev("/dev/character_buffer");
+		alt_up_char_buffer_init(char_buffer);
+		alt_up_char_buffer_clear(char_buffer);
+		alt_up_char_buffer_string(char_buffer, "KEY3: PAUSE", 65, 59);
+		while ((numBallAlive != 0) && (ballAlive > 0)) {
+				alt_u32 time_used;
+		 		start_time = alt_timestamp();		// Frame rate cap		
+				int ballCursor, numBalls;
+			if (IORD_32DIRECT(PUSH_BASE,0) == 0x06) { //paused
+				while (IORD_32DIRECT(PUSH_BASE,0) != 0xE)
+					;
+				unsigned char buffer[BUFFERLEN] = { 0 };
+				ExportBlockDataStructure(&renderObjectStructure,
+						&blockObjectStructure, buffer, BUFFERLEN);
+				//sdwr2("LVL1.bin", buffer);
+				num = -1;
+				num = DrawPauseMenu();
+				switch (num) {
+				case 0:
+					ImportBlockDataStructure(&renderObjectStructure,
+							&blockObjectStructure, buffer, BUFFERLEN);
+					break;
+				case 1:
+					game_index = SaveGame();
+					sdwr2(game[game_index], buffer);
+					savedgame = 1;
+					//backtomain = 1;
+					//ballAlive = 0;
+					break;
+				default:
 
-		currentFrame++;
+					backtomain = 1;
+					ballAlive = 0;
+					break;
+//							return 0;
+				}
+			}
+			if(backtomain == 1) break;
+			//int position = paddleposition(&spi_read);
+			// printf("%d\n", position);
+			MovePaddle(&paddle, paddleposition(&spi_read));
 
+		switchnow = IORD_32DIRECT(SWITCHES_BASE, 0);
+		if ((switchnow != switchlast) && (ballCount < MAX_BALLS)) {
+			switchlast = switchnow;
+			ballCount++;
+			AddBall(&ballObjectStructure);
+		}
+
+		numBalls = ballObjectStructure.numBallsSet;
+		for (ballCursor = 0; ballCursor < numBalls; ballCursor++) {
+			if (ballObjectStructure.balls[ballCursor].isActive == TRUE) {
+				int dead = MoveBall(&renderObjectStructure, &blockObjectStructure, &paddle,
+						&ballObjectStructure.balls[ballCursor], currentFrame,
+						&blockHitSound);
+				if(dead == 0){
+					ballAlive--;
+					ballObjectStructure.balls[ballCursor].isActive = FALSE;
+					EraseBall( &ballObjectStructure.balls[ballCursor]);
+				}
+			}
+		}
+
+		end_time = alt_timestamp();
+
+		if(start_time >= end_time)
+		{
+			time_used = (0xFFFF - start_time) + end_time;
+		}
+		else
+		{
+			time_used = end_time - start_time ;
+		}
+
+		if(time_used < total_wait_time) {
+			// Wait remaining cycles
+			for(; time_used<total_wait_time; ++time_used);
+		}
+
+
+
+			currentFrame++;
+
+		}
+		if (savedgame != 1 || backtomain != 1)
+			restart = 1;
+		if (backtomain == 1)
+			continue;
 	}
+
+	//Game Over print available options
 
 #if PERFORM_EXERCISES == 1
 	int press;

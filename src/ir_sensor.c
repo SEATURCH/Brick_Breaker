@@ -6,9 +6,10 @@
  */
 
 #include "../include/ir_sensor.h"
+#include "../include/vga_graphics.h"
 #include <system.h>
 #define bit_flipper_base	(volatile int *)	BIT_FLIPPER_0_BASE
-#define TOP_BOUND 271
+#define TOP_BOUND (SCREEN_WIDTH-DEFAULT_PADDLE_WIDTH-1)
 #define BOT_BOUND 0
 
 int init = 0;

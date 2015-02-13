@@ -48,6 +48,41 @@ void sdwr(char* name, unsigned char *buff){
 
 }
 
+void sdwr2(char* name, unsigned char *buff){
+	short int sd_fileh;
+	//char buffer[512] = "WELCOME TO THE INTERFACE!!\r\n\0";
+	 printf("SD Card Access Test\n");
+
+	      if(alt_up_sd_card_is_Present())
+	      {
+	          if(alt_up_sd_card_is_FAT16())
+	              printf("Card is FAT16\n");
+	          else
+	              printf("Card is not FAT16\n");
+
+	          sd_fileh = alt_up_sd_card_fopen(name, true);
+
+	          if (sd_fileh < 0){
+	              printf("Problem creating file. Error %i", sd_fileh);
+	              sd_fileh = alt_up_sd_card_fopen(name, false);
+	          }
+
+	              printf("SD Accessed Successfully, writing data...");
+	              int index = 0;
+	              while(index <BUFFERLEN) {
+	                  alt_up_sd_card_write(sd_fileh, buff[index]);
+                      index = index + 1;
+	              }
+	              printf("Done!\n");
+
+	              printf("Closing File...");
+	              alt_up_sd_card_fclose(sd_fileh);
+	              printf("Done!\n");
+
+	      }
+
+}
+
 int sdrd(){
 	int i, j=0;
 	short int sd_fileh;

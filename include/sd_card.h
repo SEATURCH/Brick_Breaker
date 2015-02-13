@@ -15,6 +15,7 @@
 //void prep(char* name);
 alt_up_sd_card_dev* initialize_sd_card();
 void sdwr(char* name, unsigned char* buffer);
+void sdwr2(char* name, unsigned char *buff);
 int sdrd();
 void readfile(int ind, unsigned char * buff);
 void prep(char* name, int index);

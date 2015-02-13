@@ -15,8 +15,62 @@ void InitializeBall(Ball* ball) {
 	ball->x_dir = DEFAULT_BALL_DIR_X;
 	ball->y_dir = DEFUALT_BALL_DIR_Y;
 	ball->color = DEFAULT_BALL_COLOR;
+	ball->isActive = FALSE;
 
 }
+
+
+void InitializeBallObjectStructure(BallObjectStructure *ballObjectStructure)
+{
+	int ballCursor;
+	for(ballCursor = 0; ballCursor < MAX_BALLS; ballCursor++)
+	{
+		ballObjectStructure->balls[ballCursor].isActive = FALSE;
+	}
+	ballObjectStructure->numBallsSet = 0;
+}
+
+
+void AddBall(BallObjectStructure *ballObjectStructure)
+{
+	unsigned int* seed = (unsigned int*) 0x666;
+	// Add a ball, and initialize the frequency to a random value within the set range
+	int newBallCursor = ballObjectStructure->numBallsSet;
+
+	int randomBallSpeedX;
+	int randomBallDirX;
+
+	Ball *newBall = &ballObjectStructure->balls[newBallCursor];
+
+	// Static variables for ball
+	newBall->x_pos = DEFAULT_BALL_POS_X;
+	newBall->y_pos = DEFAULT_BALL_POS_Y;
+	newBall->y_frequency = DEFAULT_BALL_FREQ_Y;
+	newBall->y_dir = DEFUALT_BALL_DIR_Y;
+	newBall->color = (rand_r(seed) & 0x1111) + 0x0999;
+	newBall->isActive = TRUE;
+
+	// Determine a ball X speed within the random range
+	randomBallSpeedX = rand_r(seed) % (BALL_SPEED_1 - BALL_SPEED_7);
+
+	// Offset by the fastest speed since rand starts at 0
+	randomBallSpeedX += BALL_SPEED_7;
+
+	//randomBallSpeedX = rand_s()
+	newBall->x_frequency = randomBallSpeedX;
+
+
+	// Generate a value in the set {0, 1}
+	randomBallDirX = rand_r(seed) % 2;
+
+	// Set direction to set {-1, 1}
+	randomBallDirX = (randomBallDirX == 1) ? 1 : -1;
+
+	newBall->x_dir = randomBallDirX;
+
+	ballObjectStructure->numBallsSet++;
+}
+
 
 int CheckTouchedRenderObjectsX(Set *touchedRenderObjects,
 		RenderObjectStructure *renderObjectStructure, int xStart, int yStart,
@@ -102,7 +156,7 @@ int abs_diff(int paddle_middle, int ball_middle, Ball* ball) {
 int collision_m[7] = { BALL_SPEED_1, BALL_SPEED_2, BALL_SPEED_3, BALL_SPEED_4,
 		BALL_SPEED_5, BALL_SPEED_6, BALL_SPEED_7 };
 void CheckPaddleCollision(Paddle* paddle, Ball* ball, int* hitX, int* hitY,
-		int newX, int newY) {
+		int newX, int newY, MusicData* blockHitSound) {
 	// Check for Vertical collision with paddle
 	if ((newX + BALL_OBJECT_WIDTH) > paddle->x_pos) {
 		if (newX < (paddle->x_pos + DEFAULT_PADDLE_WIDTH)) {
@@ -116,6 +170,7 @@ void CheckPaddleCollision(Paddle* paddle, Ball* ball, int* hitX, int* hitY,
 					int abs_dist = abs_diff(paddle_middle, ball_middle, ball);
 					ball->x_frequency = collision_m[(abs_dist / 4)];
 					printf("%d\n", collision_m[(abs_dist / 4)]);
+					play_sound(blockHitSound);
 
 				}
 
@@ -226,8 +281,8 @@ int MoveBall(RenderObjectStructure *renderObjectStructure,
 	}
 
 	if (CHECK_BOTTOM_WALL(newY)) {
-		hitY++;
-		//return 0;
+		//hitY++;
+		return 0;
 	} else if (CHECK_TOP_WALL(newY)) {
 		hitY++;
 		printf("Wall hit Y!\n");
@@ -235,7 +290,7 @@ int MoveBall(RenderObjectStructure *renderObjectStructure,
 	}
 
 	//Check for paddle collision
-	CheckPaddleCollision(paddle, ball, &hitX, &hitY, newX, newY);
+	CheckPaddleCollision(paddle, ball, &hitX, &hitY, newX, newY,blockHitSound);
 
 	//	Check paddle collision
 

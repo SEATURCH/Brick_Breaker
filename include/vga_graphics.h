@@ -15,10 +15,11 @@
 #include "../include/common.h"
 #include "../include/ir_sensor.h"
 #include "../include/memory_map.h"
+#include "../include/sd_card.h"
 #include "altera_up_avalon_video_pixel_buffer_dma.h"
 #include "altera_up_avalon_video_character_buffer_with_dma.h"
 
-
+#define BUFFERLEN 500
 #define FALSE 							0
 #define TRUE 							1
 // Screen defines
@@ -53,8 +54,8 @@
 #define DEFAULT_MAX_BLOCKS				((NUM_RENDER_OBJECTS_TOTAL) / ((DEFAULT_BLOCK_WIDTH) * (DEFAULT_BLOCK_HEIGHT)))
 
 // Paddle default values
-#define DEFAULT_PADDLE_WIDTH			48 // must be multiple of ball width
-#define DEFAULT_PADDLE_HEIGHT			4
+#define DEFAULT_PADDLE_WIDTH			64 // must be multiple of ball width
+#define DEFAULT_PADDLE_HEIGHT			2
 #define INITIAL_PADDLE_Y_POS			220
 #define INITIAL_PADDLE_X_POS			((SCREEN_WIDTH >> 1) - DEFAULT_PADDLE_WIDTH)
 #define DEFAULT_PADDLE_COLOR			0x0F0F
@@ -75,9 +76,9 @@ typedef struct RenderObjectStructure {
 // enum Value refers to color
 typedef enum BlockType {
 	Invisible = SCREEN_BACKGROUND_COLOR,
-	SingleHealth = 0x8888,
-	DoubleHealth = 0xBBBB, // REPLACE LATER
-	TripleHealth = 0xFFFF, // REPLACE LATER
+	SingleHealth = 0x6000,
+	DoubleHealth = 0xA000, // REPLACE LATER
+	TripleHealth = 0xF000, // REPLACE LATER
 	Unbreakable = 0x2329, // REPLACE LATER
 } BlockType;
 
@@ -132,10 +133,62 @@ typedef struct Ball {
 	int y_dir;
 
 	int color;
+
+	// Is Active
+	int isActive;
+
 } Ball;
+
+#define MAX_BALLS	10
+
+typedef struct BallObjectStructure{
+	Ball balls[MAX_BALLS];
+	int numBallsSet;
+} BallObjectStructure;
+
+
+#define CHAR_SIZE			4
+#define LINE_GAP			3
+#define COLOR_HEIGHT		3 * CHAR_SIZE
+#define ONE_SIDE_MARGIN		CHAR_SIZE
+#define MARGIN				2 * ONE_SIDE_MARGIN
+#define CHAR_X				33
+#define	CHAR_Y				20
+#define	CHAR_BUFF			20
+#define COLOR_X				(CHAR_X * CHAR_SIZE) - (ONE_SIDE_MARGIN)
+#define COLOR_Y				(CHAR_Y * CHAR_SIZE) - (ONE_SIDE_MARGIN)
+#define CURSOR_COLOR		0x7BEF
+#define TOTAL_MENU_OPTIONS	5
+#define LEVELS				2
+typedef struct MenuContent{
+	char str[CHAR_BUFF];
+	int strLen;
+}MenuContent;
+
+typedef struct ScreenMenu{
+	MenuContent block[TOTAL_MENU_OPTIONS];
+	int movedUp;
+	int track;
+	int cursor_pos;
+
+}ScreenMenu;
+
+int DrawStartMenu(int restart);
+int DrawLevelMenu();
+int DrawPauseMenu();
+int SaveGame();
+//void SaveGame();
+void InitializeScreenMenu(ScreenMenu *Menu, alt_up_char_buffer_dev *char_buffer);
+void DrawLoadMenu(RenderObjectStructure *renderObjectStructure, BlockObjectStructure * blockObjectStructure);
+void reDrawMenu(ScreenMenu *Menu);
+void LoadNewGame(RenderObjectStructure *renderObjectStructure, BlockObjectStructure * blockObjectStructure, int level);
+int DrawSavedGameMenu();
+
+void ClearScreen(ScreenMenu *Menu);
 
 // Drawing
 void DrawBoxFPGA(int x1, int y1, int x2, int y2, int color, int borders);
+//void DrawBoxFPGA(int x1, int y1, int x2, int y2, int color);
 void DrawFPGARenderObject(int renderObjectStartX, int renderObjectStartY,
 		int color);
 void DrawRenderObjectStructure(RenderObjectStructure *renderObjectStructure);

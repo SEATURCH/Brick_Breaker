@@ -10,6 +10,23 @@
 #include "../include/sound.h"
 #include <math.h>
 #define DEFAULT_BALL_POS_X				(SCREEN_WIDTH >> 1)
+#define DEFAULT_BALL_POS_Y				(INITIAL_PADDLE_Y_POS)
+#define DEFAULT_BALL_FREQ_X				(2)
+#define DEFAULT_BALL_FREQ_Y				(2)
+#define DEFAULT_BALL_DIR_X				(1) // Start direction off going to up right
+#define DEFUALT_BALL_DIR_Y				(-1)
+#define DEFAULT_BALL_COLOR				0xFFFF
+#define DEFAULT_PADDLE_ZERO_VEC			DEFAULT_PADDLE_WIDTH/4
+#define BALL_SPEED_1					13
+#define BALL_SPEED_2					11
+#define BALL_SPEED_3					9
+#define BALL_SPEED_4					7
+#define BALL_SPEED_5					5
+#define BALL_SPEED_6					3
+#define BALL_SPEED_7					1
+
+/*
+#define DEFAULT_BALL_POS_X				(SCREEN_WIDTH >> 1)
 #define DEFAULT_BALL_POS_Y				(SCREEN_HEIGHT >> 1)
 #define DEFAULT_BALL_FREQ_X				(5)
 #define DEFAULT_BALL_FREQ_Y				(5)
@@ -24,6 +41,9 @@
 #define BALL_SPEED_5					7
 #define BALL_SPEED_6					5
 #define BALL_SPEED_7					2
+*/
+
+
 /*** MACROS ***/
 
 // Returns 1 if ball is supposed to be moving in currentFrame

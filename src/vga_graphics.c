@@ -1,14 +1,9 @@
-ï»¿/*
+/*
  * vga_graphics.c
  *
- *  Created on: Jan 24, 2015
+ *  Created on: Feb 12, 2015
  *      Author: Himanshu
- *  Modified on: Jan 25, 2015
- *  	Author: Alan
- *  Modified on: Jan 28, 2015
- *	Author: Francis
  */
-
 #include "../include/vga_graphics.h"
 #include "../include/timestamp_timer.h"
 
@@ -42,7 +37,7 @@ void DrawFPGABallObject(int renderObjectStartX, int renderObjectStartY,
 
 	// Set colour
 	IOWR_32DIRECT(DRAWER_BASE, 16, color);
-	IOWR_32DIRECT(DRAWER_BASE, 24, WITHOUT_BORDERS);
+	IOWR_32DIRECT(DRAWER_BASE, 24, 0);
 	// Start drawing
 	IOWR_32DIRECT(DRAWER_BASE, 20, 1);
 
@@ -67,7 +62,9 @@ void DrawFPGARenderObject(int renderObjectStartX, int renderObjectStartY,
 
 	// Set colour
 	IOWR_32DIRECT(DRAWER_BASE, 16, color);
-
+	if(color == SCREEN_BACKGROUND_COLOR) {
+		IOWR_32DIRECT(DRAWER_BASE,24, WITHOUT_BORDERS);
+	}
 	// Start drawing
 	IOWR_32DIRECT(DRAWER_BASE, 20, 1);
 
@@ -103,7 +100,7 @@ int InitializeVGA(alt_up_pixel_buffer_dma_dev *pixel_buffer) {
 	if (pixel_buffer == NULL) {
 		return 0;
 	}
-	// Set the background buffer address â€“ Although we donâ€™t use the background,
+	// Set the background buffer address – Although we don’t use the background,
 	// they only provide a function to change the background buffer address, so
 	// we must set that, and then swap it to the foreground.
 	alt_up_pixel_buffer_dma_change_back_buffer_address(pixel_buffer,
@@ -180,6 +177,12 @@ void AddBlock(BlockObjectStructure *blockObjectStructure,
 	if (blockObject->blockType != Unbreakable) {
 		++blockObjectStructure->numBlocksLeft;
 	}
+	DrawBoxFPGA(blockObject->blockXStart * RENDER_OBJECT_WIDTH,
+			blockObject->blockYStart * RENDER_OBJECT_HEIGHT,
+			(blockObject->blockXStart + blockObject->blockWidthRenderObjects) * RENDER_OBJECT_WIDTH - 1,
+			(blockObject->blockYStart + blockObject->blockHeightRenderObjects) * RENDER_OBJECT_HEIGHT - 1,
+			blockObject->blockType, WITH_BORDERS);
+
 }
 
 void MapBlockObjectStructureToRender(
@@ -326,7 +329,7 @@ void draw_random_boxes_forever() {
 	// Use the name of your pixel buffer DMA core
 	pixel_buffer = alt_up_pixel_buffer_dma_open_dev("/dev/pixel_buffer_dma");
 
-	// Set the background buffer address â€“ Although we donâ€™t use the background,
+	// Set the background buffer address – Although we don’t use the background,
 	// they only provide a function to change the background buffer address, so
 	// we must set that, and then swap it to the foreground.
 	alt_up_pixel_buffer_dma_change_back_buffer_address(pixel_buffer,
@@ -393,4 +396,393 @@ void draw_diagonal_line_with_character() {
 	alt_up_pixel_buffer_dma_clear_screen(pixel_buffer, 0);
 	alt_up_pixel_buffer_dma_draw_line(pixel_buffer, 0, 0, 320, 240, 0xFFFF, 0);
 	alt_up_char_buffer_string(char_buffer, "EECE 381", 40, 30);
+}
+
+void InitializeScreenMenu(ScreenMenu *Menu, alt_up_char_buffer_dev *char_buffer) {
+	Menu->track = -1;
+	Menu->cursor_pos = -1;
+	Menu->movedUp = -1;
+	alt_up_char_buffer_string(char_buffer, "KEY3: SELECT        KEY2: UP        KEY1: DOWN", 25, 59);
+
+}
+void AddMenuOptions(ScreenMenu *Menu, alt_up_char_buffer_dev *char_buffer,
+		const char *str) {
+	if (Menu->track > TOTAL_MENU_OPTIONS) {
+		printf("ERROR: Menu full!!!!\n");
+		return;
+	}
+
+	Menu->track++;
+	int tr = Menu->track;
+	snprintf(Menu->block[Menu->track].str, CHAR_BUFF, str);
+	Menu->block[Menu->track].strLen = strlen(str);
+
+	int y_offset = LINE_GAP * Menu->track;
+	alt_up_char_buffer_string(char_buffer, str, CHAR_X, (CHAR_Y + y_offset));
+
+	//if (Menu->track == 0) {
+	if (tr == 0) {
+		Menu->cursor_pos++;
+		int x2 = COLOR_X + (Menu->block[Menu->cursor_pos].strLen * CHAR_SIZE)
+				+ MARGIN;
+		int y2 = COLOR_Y + COLOR_HEIGHT;
+		DrawBoxFPGA(COLOR_X, COLOR_Y, x2, y2, CURSOR_COLOR, WITHOUT_BORDERS);
+	}
+	Menu->track = tr;
+}
+
+void reDrawMenu(ScreenMenu *Menu) {
+	int x1, y1, x2, y2;
+	x1 = COLOR_X;
+	y1 = COLOR_Y + (COLOR_HEIGHT * Menu->cursor_pos);
+	x2 = x1 + (Menu->block[Menu->cursor_pos].strLen * CHAR_SIZE) + MARGIN;
+	y2 = y1 + COLOR_HEIGHT;
+	DrawBoxFPGA(x1, y1, x2, y2, SCREEN_BACKGROUND_COLOR, WITHOUT_BORDERS);
+
+	if (Menu->movedUp == 0) { //moved down
+		x2 = x1 + (Menu->block[++Menu->cursor_pos].strLen * CHAR_SIZE) + MARGIN;
+		y1 = COLOR_Y + (COLOR_HEIGHT * Menu->cursor_pos);
+		y2 = y1 + COLOR_HEIGHT;
+	} else if (Menu->movedUp == 1) {
+		x2 = x1 + (Menu->block[--Menu->cursor_pos].strLen * CHAR_SIZE) + MARGIN;
+		y1 = COLOR_Y + (COLOR_HEIGHT * Menu->cursor_pos);
+		y2 = y1 + COLOR_HEIGHT;
+	}
+	DrawBoxFPGA(x1, y1, x2, y2, CURSOR_COLOR, WITHOUT_BORDERS);
+}
+
+int DrawStartMenu(int restart) {
+	ScreenMenu Menu;
+	int ret;
+	alt_up_char_buffer_dev *char_buffer;
+
+	char_buffer = alt_up_char_buffer_open_dev("/dev/character_buffer");
+	alt_up_char_buffer_init(char_buffer);
+	alt_up_char_buffer_clear(char_buffer);
+
+	InitializeScreenMenu(&Menu, char_buffer);
+
+	if (restart)
+		alt_up_char_buffer_string(char_buffer, "Game Over :(", 33, 10);
+	AddMenuOptions(&Menu, char_buffer, "Start New Game");
+	AddMenuOptions(&Menu, char_buffer, "Load Saved Game");
+	AddMenuOptions(&Menu, char_buffer, "Exit");
+	while (1) {
+		if (IORD_32DIRECT(PUSH_BASE,0) == 0x06) {
+			while (IORD_32DIRECT(PUSH_BASE,0) != 0xE)
+				;
+			alt_up_char_buffer_clear(char_buffer);
+			ClearScreen(&Menu);
+			ret = Menu.cursor_pos;
+			break;
+		}
+		if (Menu.movedUp == -1)
+			switch (IORD_32DIRECT(PUSH_BASE,0)) {
+			case 0xC:
+				if (Menu.cursor_pos < Menu.track)
+					Menu.movedUp = 0; // moved down
+				break;
+			case 0xA:
+				if (Menu.cursor_pos > 0)
+					Menu.movedUp = 1;
+				break;
+			default:
+				break;
+			}
+
+		if (IORD_32DIRECT(PUSH_BASE,0) == 0xE && Menu.movedUp != -1) {
+			reDrawMenu(&Menu);
+			Menu.movedUp = -1;
+		}
+	}
+	return ret;
+}
+
+int DrawLevelMenu(){
+		int ret, i = 0;
+		ScreenMenu Menu;
+		const char* game[] = { "LEVEL 1", "LEVEL 2", "LEVEL 3", "LEVEL 4", "LEVEL 5",
+				"LEVEL 6", "LEVEL 7", "LEVEL 8", "LEVEL 9", "LEVEL 10" };
+		alt_up_char_buffer_dev *char_buffer;
+
+		char_buffer = alt_up_char_buffer_open_dev("/dev/character_buffer");
+		alt_up_char_buffer_init(char_buffer);
+		alt_up_char_buffer_clear(char_buffer);
+
+		InitializeScreenMenu(&Menu, char_buffer);
+		while (i < (TOTAL_MENU_OPTIONS - 1) && i < LEVELS)
+			AddMenuOptions(&Menu, char_buffer, game[i++]);
+			AddMenuOptions(&Menu, char_buffer, "BACK");
+
+		while (1) {
+			if (IORD_32DIRECT(PUSH_BASE,0) == 0x06) {
+				while (IORD_32DIRECT(PUSH_BASE,0) != 0xE)
+					;
+				alt_up_char_buffer_clear(char_buffer);
+				ClearScreen(&Menu);
+				if(Menu.cursor_pos == Menu.track) ret = (TOTAL_MENU_OPTIONS - 1); // back button
+				else ret = Menu.cursor_pos;
+				break;
+			}
+			if (Menu.movedUp == -1)
+				switch (IORD_32DIRECT(PUSH_BASE,0)) {
+				case 0xC:
+					if (Menu.cursor_pos < Menu.track)
+						Menu.movedUp = 0; // moved down
+					break;
+				case 0xA:
+					if (Menu.cursor_pos > 0)
+						Menu.movedUp = 1;
+					break;
+				default:
+					break;
+				}
+
+			if (IORD_32DIRECT(PUSH_BASE,0) == 0xE && Menu.movedUp != -1) {
+				reDrawMenu(&Menu);
+				Menu.movedUp = -1;
+			}
+		}
+		return ret;
+}
+
+void LoadNewGame(RenderObjectStructure *renderObjectStructure,
+		BlockObjectStructure * blockObjectStructure, int level) {
+	int i, j;
+	switch (level) {
+	case 0:
+		j=5;
+		//for (j = 5; (j + DEFAULT_BLOCK_HEIGHT - 1) < 32; j += 2) {
+			for (i = 1; (i + DEFAULT_BLOCK_WIDTH - 1) < 40; i += 2) {
+				AddBlock(blockObjectStructure, i, j, DEFAULT_BLOCK_WIDTH,
+						DEFAULT_BLOCK_HEIGHT, SingleHealth);
+			}
+
+		//}
+		j = 6;
+		for (i = 1; (i + DEFAULT_BLOCK_WIDTH - 1) < 40; i += 2) {
+						AddBlock(blockObjectStructure, i, j, DEFAULT_BLOCK_WIDTH,
+								DEFAULT_BLOCK_HEIGHT, DoubleHealth);
+		}
+		j = 7;
+		for (i = 1; (i + DEFAULT_BLOCK_WIDTH - 1) < 40; i += 2) {
+								AddBlock(blockObjectStructure, i, j, DEFAULT_BLOCK_WIDTH,
+										DEFAULT_BLOCK_HEIGHT, TripleHealth);
+		}
+		j=10;
+				//for (j = 5; (j + DEFAULT_BLOCK_HEIGHT - 1) < 32; j += 2) {
+					for (i = 1; (i + DEFAULT_BLOCK_WIDTH - 1) < 40; i += 2) {
+						AddBlock(blockObjectStructure, i, j, DEFAULT_BLOCK_WIDTH,
+								DEFAULT_BLOCK_HEIGHT, TripleHealth);
+					}
+
+				//}
+				j = 11;
+				for (i = 1; (i + DEFAULT_BLOCK_WIDTH - 1) < 40; i += 2) {
+								AddBlock(blockObjectStructure, i, j, DEFAULT_BLOCK_WIDTH,
+										DEFAULT_BLOCK_HEIGHT, DoubleHealth);
+				}
+				j = 12;
+				for (i = 1; (i + DEFAULT_BLOCK_WIDTH - 1) < 40; i += 2) {
+										AddBlock(blockObjectStructure, i, j, DEFAULT_BLOCK_WIDTH,
+												DEFAULT_BLOCK_HEIGHT, SingleHealth);
+				}
+
+		j = 15;
+				for (i = 7; (i + DEFAULT_BLOCK_WIDTH - 1) < 17; i += 2) {
+									AddBlock(blockObjectStructure, i, j, DEFAULT_BLOCK_WIDTH,
+												DEFAULT_BLOCK_HEIGHT, TripleHealth);
+								}
+				for (i = 23; (i + DEFAULT_BLOCK_WIDTH - 1) < 35; i += 2) {
+													AddBlock(blockObjectStructure, i, j, DEFAULT_BLOCK_WIDTH,
+																DEFAULT_BLOCK_HEIGHT, TripleHealth);
+												}
+		j = 16;
+				for (i = 11; (i + DEFAULT_BLOCK_WIDTH - 1) < 17; i += 2) {
+													AddBlock(blockObjectStructure, i, j, DEFAULT_BLOCK_WIDTH,
+																DEFAULT_BLOCK_HEIGHT, TripleHealth);
+												}
+				for (i = 23; (i + DEFAULT_BLOCK_WIDTH - 1) < 30; i += 2) {
+																	AddBlock(blockObjectStructure, i, j, DEFAULT_BLOCK_WIDTH,
+																				DEFAULT_BLOCK_HEIGHT, TripleHealth);
+																}
+		j = 17;
+				for (i = 15; (i + DEFAULT_BLOCK_WIDTH - 1) < 17; i += 2) {
+													AddBlock(blockObjectStructure, i, j, DEFAULT_BLOCK_WIDTH,
+																DEFAULT_BLOCK_HEIGHT, TripleHealth);
+				}
+				for (i = 23; (i + DEFAULT_BLOCK_WIDTH - 1) < 25; i += 2) {
+																	AddBlock(blockObjectStructure, i, j, DEFAULT_BLOCK_WIDTH,
+																				DEFAULT_BLOCK_HEIGHT, TripleHealth);
+								}
+		break;
+	case 1:
+		for (j = 0; (j + DEFAULT_BLOCK_HEIGHT) < NUM_RENDER_OBJECTS_HEIGHT;
+				j += 3 * DEFAULT_BLOCK_HEIGHT) {
+			for (i = 0; (i + DEFAULT_BLOCK_WIDTH) < NUM_RENDER_OBJECTS_WIDTH;
+					i += 3 * DEFAULT_BLOCK_WIDTH) {
+				AddBlock(blockObjectStructure, i, j, DEFAULT_BLOCK_WIDTH,
+						DEFAULT_BLOCK_HEIGHT, TripleHealth);
+			}
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+int DrawSavedGameMenu() {
+	int num_games = sdrd();
+	int ret, i = 0;
+	ScreenMenu Menu;
+	const char* game[] = { "GAME 1", "GAME 2", "GAME 3", "GAME 4", "GAME 5",
+			"GAME 6", "GAME 7", "GAME 8", "GAME 9", "GAME 10" };
+	alt_up_char_buffer_dev *char_buffer;
+
+	char_buffer = alt_up_char_buffer_open_dev("/dev/character_buffer");
+	alt_up_char_buffer_init(char_buffer);
+	alt_up_char_buffer_clear(char_buffer);
+
+	InitializeScreenMenu(&Menu, char_buffer);
+	while (i < (TOTAL_MENU_OPTIONS - 1) && i < num_games)
+		AddMenuOptions(&Menu, char_buffer, game[i++]);
+		AddMenuOptions(&Menu, char_buffer, "BACK");
+
+	while (1) {
+		if (IORD_32DIRECT(PUSH_BASE,0) == 0x06) {
+			while (IORD_32DIRECT(PUSH_BASE,0) != 0xE)
+				;
+			alt_up_char_buffer_clear(char_buffer);
+			ClearScreen(&Menu);
+			if(Menu.cursor_pos == Menu.track) ret = (TOTAL_MENU_OPTIONS - 1); // back button
+			else ret = Menu.cursor_pos;
+			break;
+		}
+		if (Menu.movedUp == -1)
+			switch (IORD_32DIRECT(PUSH_BASE,0)) {
+			case 0xC:
+				if (Menu.cursor_pos < Menu.track)
+					Menu.movedUp = 0; // moved down
+				break;
+			case 0xA:
+				if (Menu.cursor_pos > 0)
+					Menu.movedUp = 1;
+				break;
+			default:
+				break;
+			}
+
+		if (IORD_32DIRECT(PUSH_BASE,0) == 0xE && Menu.movedUp != -1) {
+			reDrawMenu(&Menu);
+			Menu.movedUp = -1;
+		}
+	}
+	return ret;
+
+}
+int SaveGame(){
+	int num_games = 5;//sdrd();
+		int ret, i = 0;
+		ScreenMenu Menu;
+		const char* game[] = { "GAME 1", "GAME 2", "GAME 3", "GAME 4", "GAME 5",
+				"GAME 6", "GAME 7", "GAME 8", "GAME 9", "GAME 10" };
+		alt_up_char_buffer_dev *char_buffer;
+
+		char_buffer = alt_up_char_buffer_open_dev("/dev/character_buffer");
+		alt_up_char_buffer_init(char_buffer);
+		alt_up_char_buffer_clear(char_buffer);
+
+		InitializeScreenMenu(&Menu, char_buffer);
+		while (i < (TOTAL_MENU_OPTIONS - 1) && i < num_games)
+			AddMenuOptions(&Menu, char_buffer, game[i++]);
+			AddMenuOptions(&Menu, char_buffer, "BACK");
+
+		while (1) {
+			if (IORD_32DIRECT(PUSH_BASE,0) == 0x06) {
+				while (IORD_32DIRECT(PUSH_BASE,0) != 0xE)
+					;
+				alt_up_char_buffer_clear(char_buffer);
+				ClearScreen(&Menu);
+				if(Menu.cursor_pos == Menu.track) ret = (TOTAL_MENU_OPTIONS - 1); // back button
+				else ret = Menu.cursor_pos;
+				break;
+			}
+			if (Menu.movedUp == -1)
+				switch (IORD_32DIRECT(PUSH_BASE,0)) {
+				case 0xC:
+					if (Menu.cursor_pos < Menu.track)
+						Menu.movedUp = 0; // moved down
+					break;
+				case 0xA:
+					if (Menu.cursor_pos > 0)
+						Menu.movedUp = 1;
+					break;
+				default:
+					break;
+				}
+
+			if (IORD_32DIRECT(PUSH_BASE,0) == 0xE && Menu.movedUp != -1) {
+				reDrawMenu(&Menu);
+				Menu.movedUp = -1;
+			}
+		}
+		return ret;
+}
+
+int DrawPauseMenu(){
+	ScreenMenu Menu;
+		int ret;
+		alt_up_char_buffer_dev *char_buffer;
+
+		char_buffer = alt_up_char_buffer_open_dev("/dev/character_buffer");
+		alt_up_char_buffer_init(char_buffer);
+		alt_up_char_buffer_clear(char_buffer);
+
+		InitializeScreenMenu(&Menu, char_buffer);
+
+		AddMenuOptions(&Menu, char_buffer, "Resume");
+		AddMenuOptions(&Menu, char_buffer, "Save Game");
+		AddMenuOptions(&Menu, char_buffer, "Exit");
+		while (1) {
+			if (IORD_32DIRECT(PUSH_BASE,0) == 0x06) {
+				while (IORD_32DIRECT(PUSH_BASE,0) != 0xE)
+					;
+				alt_up_char_buffer_clear(char_buffer);
+				ClearScreen(&Menu);
+				ret = Menu.cursor_pos;
+				break;
+			}
+			if (Menu.movedUp == -1)
+				switch (IORD_32DIRECT(PUSH_BASE,0)) {
+				case 0xC:
+					if (Menu.cursor_pos < Menu.track)
+						Menu.movedUp = 0; // moved down
+					break;
+				case 0xA:
+					if (Menu.cursor_pos > 0)
+						Menu.movedUp = 1;
+					break;
+				default:
+					break;
+				}
+
+			if (IORD_32DIRECT(PUSH_BASE,0) == 0xE && Menu.movedUp != -1) {
+				reDrawMenu(&Menu);
+				Menu.movedUp = -1;
+			}
+		}
+		return ret;
+}
+/*
+void SaveGame(){
+
+}
+*/
+void ClearScreen(ScreenMenu *Menu) {
+	int x1, y1, x2, y2;
+	x1 = COLOR_X;
+	y1 = COLOR_Y + (COLOR_HEIGHT * Menu->cursor_pos);
+	x2 = x1 + (Menu->block[Menu->cursor_pos].strLen * CHAR_SIZE) + MARGIN;
+	y2 = y1 + COLOR_HEIGHT;
+	DrawBoxFPGA(x1, y1, x2, y2, SCREEN_BACKGROUND_COLOR, WITHOUT_BORDERS);
 }
